@@ -7,7 +7,10 @@ from . import orca_names
 
 
 def trim_and_squeeze(ds):
-    ds = ds.isel(y=slice(1, -1), x=slice(1, -1))
+    if "y" in ds:
+        ds = ds.isel(y=slice(1, -1))
+    if "x" in ds:
+        ds = ds.isel(x=slice(1, -1))
     ds = ds.squeeze()
     return ds
 
