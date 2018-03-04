@@ -7,3 +7,5 @@ worker-*/
 tmp_*.nc
 **/.ipynb_checkpoints/
 notebooks/*.nc
+*.egg-info/
+.cache/
