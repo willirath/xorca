@@ -3,72 +3,19 @@
 import numpy as np
 import xarray as xr
 
-orca_names = {}
-
-orca_variables = {
-    "vozocrtx": {"coords": ["t", "z_c", "y_c", "x_r"]},
-    "vomecrty": {"coords": ["t", "z_c", "y_r", "x_c"]}
-}
-orca_names.update(orca_variables)
-
-orca_scale_factors = {
-    "e1t": {"coords": ["y_c", "x_c"]},
-    "e2t": {"coords": ["y_c", "x_c"]},
-    "e3t": {"coords": ["z_c", "y_c", "x_c"]},
-    "e1u": {"coords": ["y_c", "x_r"]},
-    "e2u": {"coords": ["y_c", "x_r"]},
-    "e3u": {"coords": ["z_c", "y_c", "x_r"]},
-    "e1v": {"coords": ["y_r", "x_c"]},
-    "e2v": {"coords": ["y_r", "x_c"]},
-    "e3v": {"coords": ["z_c", "y_r", "x_c"]}
-}
-orca_names.update(orca_scale_factors)
-
-orca_masks = {
-    "tmask": {"coords": ["z_c", "y_c", "x_c"]},
-    "umask": {"coords": ["z_c", "y_c", "x_r"]},
-    "vmask": {"coords": ["z_c", "y_r", "x_c"]},
-    "fmask": {"coords": ["z_c", "y_r", "x_r"]},
-    "tmaskatl": {"coords": ["y_c", "x_c"]},
-    "tmaskind": {"coords": ["y_c", "x_c"]},
-    "tmaskpac": {"coords": ["y_c", "x_c"]}
-}
-orca_names.update(orca_masks)
-
-orca_coords = {
-    "depth_c": {"coords": ["z_c", ], "old_name": "gdept_0"},
-    "depth_l": {"coords": ["z_l", ], "old_name": "gdepw_0"},
-    "llat_cc": {"coords": ["y_c", "x_c"], "old_name": "gphit"},
-    "llat_cr": {"coords": ["y_c", "x_r"], "old_name": "gphiu"},
-    "llat_rc": {"coords": ["y_r", "x_c"], "old_name": "gphiv"},
-    "llat_rr": {"coords": ["y_r", "x_r"], "old_name": "gphif"},
-    "llon_cc": {"coords": ["y_c", "x_c"], "old_name": "glamt"},
-    "llon_cr": {"coords": ["y_c", "x_r"], "old_name": "glamu"},
-    "llon_rc": {"coords": ["y_r", "x_c"], "old_name": "glamv"},
-    "llon_rr": {"coords": ["y_r", "x_r"], "old_name": "glamf"}
-}
-orca_names.update(orca_coords)
+from . import orca_names
 
 
-def _rename_orca_names(ds):
-    rename_dict = {v["old_name"]: k
-                   for k, v in orca_names.items()
-                   if "old_name" in v}
-    return ds.rename(rename_dict)
+def trim_and_squeeze(ds):
+    ds = ds.isel(y=slice(1, -1), x=slice(1, -1))
+    ds = ds.squeeze()
+    return ds
 
 
-def preprocess_orca(mm_file, ds):
-
-    # First, construct data set from mesh-mask file
-    ds_mm = xr.open_dataset(mm_file)
-    ds_mm = ds_mm.isel(x=slice(1, -1), y=slice(1, -1))
-    ds_mm = ds_mm.squeeze()
-
+def create_minimal_coords_ds(ds_mm):
     N_z = len(ds_mm.coords["z"])
     N_y = len(ds_mm.coords["y"])
     N_x = len(ds_mm.coords["x"])
-
-    ds_mm = _rename_orca_names(ds_mm)
 
     coords = {
         "z_c": (["z_c", ], np.arange(1, N_z + 1),
@@ -85,25 +32,69 @@ def preprocess_orca(mm_file, ds):
                 {"axis": "X", "c_grid_axis_shift": 0.5})
     }
 
-    coords.update({k: (v["coords"], ds_mm[k].data)
-                   for k, v in orca_coords.items()})
+    return xr.Dataset(coords=coords)
 
-    return_ds = xr.Dataset(coords=coords)
 
-    # Now, get the ds to be pre-processed
-    ds = ds.isel(y=slice(1, -1), x=slice(1, -1))
-    ds = ds.squeeze()
+def copy_coords(return_ds, ds_mm):
+    for key, names in orca_names.orca_coords.items():
+        new_name = key
+        new_dims = names["dims"]
+        old_name = names.get("old_name", new_name)
+        if old_name in ds_mm.coords:
+            return_ds.coords[new_name] = (new_dims,
+                                          ds_mm.coords[old_name].data)
+        if old_name in ds_mm:
+            return_ds.coords[new_name] = (new_dims,
+                                          ds_mm[old_name].data)
+    return return_ds
 
-    # transfer time axis?
-    try:
-        ds = ds.rename({"time_counter": "t"})
-        return_ds.coords["t"] = ds.coords["t"]
-    except Exception:
-        pass
 
-    for var_name, names in orca_names.items():
-        old_name = names.get("old_name", var_name)
-        if old_name in ds:
-            return_ds[var_name] = (names["coords"], ds[old_name].data)
+def copy_vars(return_ds, raw_ds):
+    for key, names in orca_names.orca_variables.items():
+        new_name = key
+        new_dims = names["dims"]
+        old_name = names.get("old_name", new_name)
+        if old_name in raw_ds:
+            return_ds[new_name] = (new_dims, raw_ds[old_name].data)
+    return return_ds
+
+
+def rename_dims(ds):
+    rename_dict = {
+        k: v for k, v in orca_names.rename_dims.items()
+        if k in ds.dims
+    }
+    return ds.rename(rename_dict)
+
+
+def make_depth_positive_upward(ds):
+    for k, v in orca_names.orca_coords.items():
+        force_sign = v.get("force_sign", False)
+        if force_sign and k in ds.coords:
+            ds[k] = force_sign * abs(ds[k])
+
+    return ds
+
+
+def preprocess_orca(mm_file, ds):
+
+    # construct minimal grid-aware data set from mesh-mask file
+    ds_mm = xr.open_dataset(mm_file)
+    ds_mm = trim_and_squeeze(ds_mm)
+    return_ds = create_minimal_coords_ds(ds_mm)
+
+    # make sure dims are called correctly and trim input ds
+    ds = rename_dims(ds)
+    ds = trim_and_squeeze(ds)
+
+    # copy coordinates from the mesh-mask and from the data set
+    return_ds = copy_coords(return_ds, ds_mm)
+    return_ds = copy_coords(return_ds, ds)
+
+    # copy variables from the data set
+    return_ds = copy_vars(return_ds, ds)
+
+    # Finally, make sure depth is positive upward
+    return_ds = make_depth_positive_upward(return_ds)
 
     return return_ds
