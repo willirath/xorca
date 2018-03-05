@@ -7,9 +7,9 @@ from . import orca_names
 
 
 def trim_and_squeeze(ds):
-    if "y" in ds:
+    if "y" in ds.dims:
         ds = ds.isel(y=slice(1, -1))
-    if "x" in ds:
+    if "x" in ds.dims:
         ds = ds.isel(x=slice(1, -1))
     ds = ds.squeeze()
     return ds
