@@ -1,7 +1,28 @@
+"""Calculations with grid-aware data sets."""
+
 import xgcm
 
 
 def calculate_moc(ds, region=""):
+    """Calculate the MOC.
+
+    Parameters
+    ----------
+    ds : xarray dataset
+        A grid-aware dataset as produced by `xorca.lib.preprocess_orca`.
+    region : str
+        A region string.  Examples: `"atl"`, `"pac"`, `"ind"`.
+        Defaults to `""`.
+
+    Returns
+    -------
+    moc : xarray data array
+        A grid-aware data array with the moc for the specified region.  The
+        data array will have a coordinate called `"lat_moc{region}"` which is
+        the weighted horizontal and vertical avarage of the latitude of all
+        latitudes for the given point on the y-axis.
+
+    """
     grid = xgcm.Grid(ds, periodic=["Y", "X"])
 
     vmaskname = "vmask" + region
@@ -10,7 +31,7 @@ def calculate_moc(ds, region=""):
 
     weights = ds[vmaskname] * ds.e3v * ds.e1v
 
-    Ve3 = weights * ds.vomecrty
+    Ve3 = weights * ds.vomecrtyA grid-aware dataset as produced by `xorca.lib.preprocess_orca`.
 
     # calculate indefinite vertical integral of V from bottom to top, then
     # integrate zonally, convert to [Sv], and rename to region
@@ -31,6 +52,19 @@ def calculate_moc(ds, region=""):
 
 
 def calculate_psi(ds):
+    """Calculate the barotropic stream function.
+
+    Parameters
+    ----------
+    ds : xarray dataset
+        A grid-aware dataset as produced by `xorca.lib.preprocess_orca`.
+
+    Returns
+    -------
+    psi : xarray data array
+        A grid-aware data array with the barotropic stream function in `[Sv]`.
+
+    """
     grid = xgcm.Grid(ds, periodic=["Y", "X"])
 
     U_bt = (ds.vozocrtx * ds.e3u).sum("z_c")
@@ -43,6 +77,22 @@ def calculate_psi(ds):
 
 
 def calculate_speed(ds):
+    """Calculate speed on the central (T) grid.
+
+    First, interpolate U and V to the central grid, then square, add, and take
+    root.
+
+    Parameters
+    ----------
+    ds : xarray dataset
+        A grid-aware dataset as produced by `xorca.lib.preprocess_orca`.
+
+    Returns
+    -------
+    speed : xarray data array
+        A grid-aware data array with the speed in `[m/s]`.
+
+    """
     grid = xgcm.Grid(ds, periodic=["Y", "X"])
 
     U_cc = grid.interp(ds.vozocrtx, "X", to="center")
