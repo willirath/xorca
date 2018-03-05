@@ -7,6 +7,7 @@ from . import orca_names
 
 
 def trim_and_squeeze(ds):
+    """Remove redundant grid points and drop singleton dimensions."""
     if "y" in ds.dims:
         ds = ds.isel(y=slice(1, -1))
     if "x" in ds.dims:
@@ -16,6 +17,12 @@ def trim_and_squeeze(ds):
 
 
 def create_minimal_coords_ds(ds_mm):
+    """Create a minimal set of coordinates from a mesh-mask dataset.
+
+    This creates `"central"` and `"right"` grid points for the horizontal grid
+    and `"central"` and `"left"` grid points in the vertical.
+
+    """
     N_z = len(ds_mm.coords["z"])
     N_y = len(ds_mm.coords["y"])
     N_x = len(ds_mm.coords["x"])
@@ -38,21 +45,31 @@ def create_minimal_coords_ds(ds_mm):
     return xr.Dataset(coords=coords)
 
 
-def copy_coords(return_ds, ds_mm):
+def copy_coords(return_ds, ds_in):
+    """Copy coordinates and map them to the correct grid.
+
+    This copies all coordinates defined in `xorca.orca_names.orca_coords` from
+    `ds_in` to `return_ds`.
+    """
     for key, names in orca_names.orca_coords.items():
         new_name = key
         new_dims = names["dims"]
         old_name = names.get("old_name", new_name)
-        if old_name in ds_mm.coords:
+        if old_name in ds_in.coords:
             return_ds.coords[new_name] = (new_dims,
-                                          ds_mm.coords[old_name].data)
-        if old_name in ds_mm:
+                                          ds_in.coords[old_name].data)
+        if old_name in ds_in:
             return_ds.coords[new_name] = (new_dims,
-                                          ds_mm[old_name].data)
+                                          ds_in[old_name].data)
     return return_ds
 
 
 def copy_vars(return_ds, raw_ds):
+    """Copy variables and map them to the correct grid.
+
+    This copies all variables defined in `xorca.orca_names.orca_variables` from
+    `raw_ds` to `return_ds`.
+    """
     for key, names in orca_names.orca_variables.items():
         new_name = key
         new_dims = names["dims"]
@@ -63,6 +80,11 @@ def copy_vars(return_ds, raw_ds):
 
 
 def rename_dims(ds):
+    """Rename dimensions.
+
+    This renames all dimensions defined in `xorca.orca_names.rename_dims` and
+    returns the data set with renamed dimensinos.
+    """
     rename_dict = {
         k: v for k, v in orca_names.rename_dims.items()
         if k in ds.dims
@@ -70,7 +92,13 @@ def rename_dims(ds):
     return ds.rename(rename_dict)
 
 
-def make_depth_positive_upward(ds):
+def force_sign_of_coordinate(ds):
+    """Force definite sign of coordinates.
+
+    For all coordinates defined in `xorca.orca_names.orca_coordinates`, enforce
+    a sign if there is an item telling us to do so.  This is most useful to
+    ensure that, e.g., depth is _always_ pointing upwards or downwards.
+    """
     for k, v in orca_names.orca_coords.items():
         force_sign = v.get("force_sign", False)
         if force_sign and k in ds.coords:
@@ -80,7 +108,28 @@ def make_depth_positive_upward(ds):
 
 
 def preprocess_orca(mm_file, ds):
+    """Preprocess orca datasets before concatenating.
 
+    This is meant to be used like:
+    ```python
+    ds = xr.open_mfdataset(
+        data_files,
+        preprocess=(lambda ds:
+                    preprocess_orca(mesh_mask_file, ds)))
+
+    Parameters
+    ----------
+    mm_file : Path or string
+        Path or string with path to a `"mesh_mask.nc"` file which is used for
+        the grid definition.
+    ds : xarray dataset
+        Xarray dataset to be processed before concatenating.
+
+    Returns
+    -------
+    xarray dataset
+
+    """
     # construct minimal grid-aware data set from mesh-mask file
     ds_mm = xr.open_dataset(mm_file)
     ds_mm = trim_and_squeeze(ds_mm)
@@ -98,6 +147,6 @@ def preprocess_orca(mm_file, ds):
     return_ds = copy_vars(return_ds, ds)
 
     # Finally, make sure depth is positive upward
-    return_ds = make_depth_positive_upward(return_ds)
+    return_ds = force_sign_of_coordinate(return_ds)
 
     return return_ds
