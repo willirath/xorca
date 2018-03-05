@@ -31,7 +31,7 @@ def calculate_moc(ds, region=""):
 
     weights = ds[vmaskname] * ds.e3v * ds.e1v
 
-    Ve3 = weights * ds.vomecrtyA grid-aware dataset as produced by `xorca.lib.preprocess_orca`.
+    Ve3 = weights * ds.vomecrty
 
     # calculate indefinite vertical integral of V from bottom to top, then
     # integrate zonally, convert to [Sv], and rename to region
