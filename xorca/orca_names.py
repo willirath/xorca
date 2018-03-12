@@ -2,8 +2,8 @@
 
 orca_coords = {
     "t": {"dims": ["t", ]},
-    "depth_c": {"dims": ["z_c", ], "old_name": "gdept_0", "force_sign": -1.0},
-    "depth_l": {"dims": ["z_l", ], "old_name": "gdepw_0", "force_sign": -1.0},
+    "depth_c": {"dims": ["z_c", ], "old_name": "gdept_1d", "force_sign": -1.0},
+    "depth_l": {"dims": ["z_l", ], "old_name": "gdepw_1d", "force_sign": -1.0},
     "llat_cc": {"dims": ["y_c", "x_c"], "old_name": "gphit"},
     "llat_cr": {"dims": ["y_c", "x_r"], "old_name": "gphiu"},
     "llat_rc": {"dims": ["y_r", "x_c"], "old_name": "gphiv"},

@@ -1,9 +1,11 @@
 """Test the pre-processing lib."""
 
 import numpy as np
+from pathlib import Path
+import pytest
 import xarray as xr
 
-from xorca.lib import create_minimal_coords_ds, trim_and_squeeze
+from xorca.lib import (copy_coords, create_minimal_coords_ds, trim_and_squeeze)
 
 
 def test_trim_and_sqeeze():
@@ -65,3 +67,75 @@ def test_create_minimal_coords_ds():
     # Check coordinate values
     assert all([all(target_ds.coords[k] == test_ds.coords[k])
                 for k in test_ds.coords.keys()])
+
+
+def _get_empty_mesh_mask_for_nn_msh_3(dims):
+
+    # define vars
+    _vars = {
+        "tmask": ("t", "z", "y", "x"),
+        "umask": ("t", "z", "y", "x"),
+        "vmask": ("t", "z", "y", "x"),
+        "fmask": ("t", "z", "y", "x"),
+        "tmaskutil": ("t", "y", "x"),
+        "umaskutil": ("t", "y", "x"),
+        "vmaskutil": ("t", "y", "x"),
+        "fmaskutil": ("t", "y", "x"),
+        "glamt": ("t", "y", "x"),
+        "glamu": ("t", "y", "x"),
+        "glamv": ("t", "y", "x"),
+        "glamf": ("t", "y", "x"),
+        "gphit": ("t", "y", "x"),
+        "gphiu": ("t", "y", "x"),
+        "gphiv": ("t", "y", "x"),
+        "gphif": ("t", "y", "x"),
+        "e1t": ("t", "y", "x"),
+        "e1u": ("t", "y", "x"),
+        "e1v": ("t", "y", "x"),
+        "e1f": ("t", "y", "x"),
+        "e2t": ("t", "y", "x"),
+        "e2u": ("t", "y", "x"),
+        "e2v": ("t", "y", "x"),
+        "e2f": ("t", "y", "x"),
+        "ff": ("t", "y", "x"),
+        "mbathy": ("t", "y", "x"),
+        "misf": ("t", "y", "x"),
+        "isfdraft": ("t", "y", "x"),
+        "e3t_0": ("t", "z", "y", "x"),
+        "e3u_0": ("t", "z", "y", "x"),
+        "e3v_0": ("t", "z", "y", "x"),
+        "e3w_0": ("t", "z", "y", "x"),
+        "gdept_0": ("t", "z", "y", "x"),
+        "gdepu": ("t", "z", "y", "x"),
+        "gdepv": ("t", "z", "y", "x"),
+        "gdepw_0": ("t", "z", "y", "x"),
+        "gdept_1d": ("t", "z"),
+        "gdepw_1d": ("t", "z"),
+        "e3t_1d": ("t", "z"),
+        "e3w_1d": ("t", "z")
+    }
+
+    # create three types of empty arrays
+    empty = {}
+    for _dims in [("t", "z", "y", "x"), ("t", "y", "x"), ("t", "z")]:
+        empty[_dims] = np.full(tuple(dims[d] for d in _dims), np.nan)
+
+    # create coords and variable dicts for xr.Dataset
+    coords = {k: range(v) for k, v in dims.items() if k is not "t"}
+    data_vars = {k: (v, empty[v]) for k, v in _vars.items()}
+
+    return xr.Dataset(coords=coords, data_vars=data_vars)
+
+
+@pytest.mark.parametrize(
+    'dims', [
+        {"t": 1, "z": 46, "y": 100, "x": 100},
+        pytest.param({"t": 1, "z": 46, "y": 1021, "x": 1442},
+                     marks=pytest.mark.xfail)
+    ])
+def test_copy_coords(dims):
+    mock_up_mm = _get_empty_mesh_mask_for_nn_msh_3(dims)
+    mock_up_mm = trim_and_squeeze(mock_up_mm).squeeze()
+
+    return_ds = create_minimal_coords_ds(mock_up_mm)
+    return_ds = copy_coords(return_ds, mock_up_mm)
