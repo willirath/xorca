@@ -1,15 +1,16 @@
 image: continuumio/miniconda3:latest
 
 before_script:
+  - conda update -n base conda
   - conda env create -n xorca -f environment.yml
   - python setup.py install
 
 simple:
   stage: test
   script:
-    - pytest xorca/tests/
+    - py.test xorca/tests/
 
 detailed:
   stage: test
   script:
-    - pytest -v --cov=xorca/ --cov-report term-missing xorca/tests/
+    - py.test -v --cov=xorca/ --cov-report term-missing xorca/tests/
