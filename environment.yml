@@ -1,0 +1,18 @@
+name: py3_parcels
+channels:
+  - conda-forge
+dependencies:
+  - python=3
+  - cartopy
+  - coverage
+  - flake8
+  - matplotlib
+  - netCDF4
+  - numpy
+  - pandas
+  - pytest
+  - pytest-cov
+  - seawater
+  - xarray
+  - pip:
+      - git+https://github.com/xgcm/xgcm.git@bf4a2239d64dfd1c0d5b1af03e7394488433c11a
