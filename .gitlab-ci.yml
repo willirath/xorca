@@ -6,12 +6,7 @@ before_script:
   - source activate xorca
   - python setup.py install
 
-simple:
-  stage: test
-  script:
-    - pytest xorca/tests/
-
-detailed:
+pytest_and_coverage:
   stage: test
   script:
     - pytest -v --cov=xorca/ --cov-report term-missing xorca/tests/
