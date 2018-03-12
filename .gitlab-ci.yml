@@ -4,9 +4,9 @@ before_script:
   - conda update -n base conda
   - conda env create -n xorca -f environment.yml
   - source activate xorca
-  - python setup.py install
+  - pip install -r .
 
 pytest_and_coverage:
   stage: test
   script:
-    - pytest -v --cov --cov-report="term-missing" xorca/tests/
+    - pytest -v --cov=xorca --cov-report="term-missing" xorca/tests/
