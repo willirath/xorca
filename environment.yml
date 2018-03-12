@@ -10,6 +10,7 @@ dependencies:
   - netCDF4
   - numpy
   - pandas
+  - py
   - pytest
   - pytest-cov
   - seawater
