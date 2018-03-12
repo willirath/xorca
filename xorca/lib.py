@@ -113,8 +113,6 @@ def _open_mm_dataset(mm_files):
         ds_mm = xr.open_mfdataset(mm_files)
     except TypeError as e:
         ds_mm = xr.open_dataset(mm_files)
-    else:
-        raise
 
     return ds_mm
 
