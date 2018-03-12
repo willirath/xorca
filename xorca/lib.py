@@ -107,7 +107,19 @@ def force_sign_of_coordinate(ds):
     return ds
 
 
-def preprocess_orca(mm_file, ds):
+def _open_mm_dataset(mm_files):
+    """Open mm_files as either a multi-file or a single file xarray Dataset."""
+    try:
+        ds_mm = xr.open_mfdataset(mm_files)
+    except TypeError as e:
+        ds_mm = xr.open_dataset(mm_files)
+    else:
+        raise
+
+    return ds_mm
+
+
+def preprocess_orca(mm_files, ds):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -115,13 +127,14 @@ def preprocess_orca(mm_file, ds):
     ds = xr.open_mfdataset(
         data_files,
         preprocess=(lambda ds:
-                    preprocess_orca(mesh_mask_file, ds)))
+                    preprocess_orca(mesh_mask_files, ds)))
+    ```
 
     Parameters
     ----------
-    mm_file : Path or string
-        Path or string with path to a `"mesh_mask.nc"` file which is used for
-        the grid definition.
+    mm_files : Path | sequence | string
+        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
+        single file name, a sequence of Paths or file names, a glob statement.
     ds : xarray dataset
         Xarray dataset to be processed before concatenating.
 
@@ -130,8 +143,8 @@ def preprocess_orca(mm_file, ds):
     xarray dataset
 
     """
-    # construct minimal grid-aware data set from mesh-mask file
-    ds_mm = xr.open_dataset(mm_file)
+    # construct minimal grid-aware data set from mesh-mask files
+    ds_mm = _open_mm_dataset(mm_files)
     ds_mm = trim_and_squeeze(ds_mm)
     return_ds = create_minimal_coords_ds(ds_mm)
 
