@@ -5,6 +5,7 @@ before_script:
   - conda env create -n xorca -f environment.yml
   - source activate xorca
   - pip install -e .
+  - git lfs pull -I example-data/meshmask/*.nc
 
 pytest_and_coverage:
   stage: test
