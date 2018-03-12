@@ -3,6 +3,7 @@ image: continuumio/miniconda3:latest
 before_script:
   - conda update -n base conda
   - conda env create -n xorca -f environment.yml
+  - conda activate xorca
   - python setup.py install
 
 simple:
