@@ -3,15 +3,15 @@ image: continuumio/miniconda3:latest
 before_script:
   - conda update -n base conda
   - conda env create -n xorca -f environment.yml
-  - conda activate xorca
+  - source activate xorca
   - python setup.py install
 
 simple:
   stage: test
   script:
-    - py.test xorca/tests/
+    - pytest xorca/tests/
 
 detailed:
   stage: test
   script:
-    - py.test -v --cov=xorca/ --cov-report term-missing xorca/tests/
+    - pytest -v --cov=xorca/ --cov-report term-missing xorca/tests/
