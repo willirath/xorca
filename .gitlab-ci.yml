@@ -4,7 +4,7 @@ before_script:
   - conda update -n base conda
   - conda env create -n xorca -f environment.yml
   - source activate xorca
-  - pip install -r .
+  - pip install -e .
 
 pytest_and_coverage:
   stage: test
