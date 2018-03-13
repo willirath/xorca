@@ -6,6 +6,7 @@ dependencies:
   - cartopy
   - coverage
   - flake8
+  - git-lfs
   - matplotlib
   - netCDF4
   - numpy
