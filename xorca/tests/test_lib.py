@@ -1,9 +1,11 @@
 """Test the pre-processing lib."""
 
+from itertools import product
 import numpy as np
+import pytest
 import xarray as xr
 
-from xorca.lib import (create_minimal_coords_ds, trim_and_squeeze)
+from xorca.lib import (create_minimal_coords_ds, rename_dims, trim_and_squeeze)
 
 
 def test_trim_and_sqeeze():
@@ -65,3 +67,25 @@ def test_create_minimal_coords_ds():
     # Check coordinate values
     assert all([all(target_ds.coords[k] == test_ds.coords[k])
                 for k in test_ds.coords.keys()])
+
+
+_dims = {
+    "t": ("t", "time_counter"),
+    "z": ("z", "Z"),
+    "y": ("y", "Y"),
+    "x": ("x", "X")
+}
+
+
+@pytest.mark.parametrize(
+    'dims',
+    ({vk[1][ii]: vk[0]
+      for vk, ii in zip(_dims.items(), i)}
+     for i in product(range(2), repeat=4)))
+def test_rename_dims(dims):
+    source_dims = tuple(dims.keys())
+    da = xr.DataArray(np.empty((0, 0, 0, 0)), dims=source_dims)
+    da_renamed = rename_dims(da)
+
+    assert all(d in da_renamed.dims for d in _dims.keys())
+    assert all(v[1] not in da_renamed.dims for k, v in _dims.items())
