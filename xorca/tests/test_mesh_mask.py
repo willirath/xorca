@@ -269,4 +269,5 @@ def test_preprocess_orcea(tmpdir, variables, dims, set_mm_coords):
 
     mock_up_mm.to_netcdf(file_name)
 
-    return_ds = preprocess_orca(file_name, mock_up_mm)
+    # TODO: Check that the returned dataset is actually looking good
+    preprocess_orca(file_name, mock_up_mm)
