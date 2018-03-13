@@ -1,14 +1,16 @@
 """Test reading the mesh masks."""
 
 import numpy as np
+from pathlib import Path
 import pytest
 import xarray as xr
 
 from xorca.lib import (copy_coords, copy_vars, create_minimal_coords_ds,
-                       force_sign_of_coordinate, trim_and_squeeze)
+                       force_sign_of_coordinate, open_mf_or_dataset,
+                       preprocess_orca, trim_and_squeeze)
 
 
-# See the RNG
+# Seed the RNG
 np.random.RandomState(seed=137)
 
 # This is derived from
@@ -210,3 +212,61 @@ def test_force_sign(depth_c, depth_l):
 
     assert all(return_ds.coords["depth_c"].data <= 0)
     assert all(return_ds.coords["depth_l"].data <= 0)
+
+
+@pytest.mark.parametrize('use_pathlib', [False, True])
+@pytest.mark.parametrize('use_sequence', [False, True])
+@pytest.mark.parametrize('set_mm_coords', [False, True])
+@pytest.mark.parametrize('variables',
+                         [_mm_vars_nn_msh_3,
+                          _mm_vars_old])
+@pytest.mark.parametrize(
+    'dims', [
+        {"t": 1, "z": 46, "y": 100, "x": 100},
+        {"t": 1, "z": 46, "y": 222, "x": 222},
+    ])
+def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
+                         use_sequence, use_pathlib):
+    mock_up_mm = _get_nan_filled_data_set(dims, variables)
+    if set_mm_coords:
+        mock_up_mm = mock_up_mm.set_coords(
+            [v for v in mock_up_mm.data_vars.keys()])
+
+    file_name = str(tmpdir.join("mesh_mask.nc"))
+
+    mock_up_mm.to_netcdf(file_name)
+
+    if use_pathlib:
+        file_name = Path(file_name)
+    if use_sequence:
+        file_name = [file_name, ]
+
+    re_read_mm = open_mf_or_dataset(file_name)
+
+    assert all(v in mock_up_mm for v in re_read_mm.data_vars)
+    assert all(v in re_read_mm for v in mock_up_mm.data_vars)
+    assert all(c in mock_up_mm.coords for c in re_read_mm.coords)
+    assert all(c in re_read_mm.coords for c in mock_up_mm.coords)
+
+
+@pytest.mark.parametrize('set_mm_coords', [False, True])
+@pytest.mark.parametrize('variables',
+                         [_mm_vars_nn_msh_3,
+                          _mm_vars_old,
+                          _mm_vars_nn_msh_3_added_misshaped_vars])
+@pytest.mark.parametrize(
+    'dims', [
+        {"t": 1, "z": 46, "y": 100, "x": 100},
+        {"t": 1, "z": 46, "y": 222, "x": 222},
+    ])
+def test_preprocess_orcea(tmpdir, variables, dims, set_mm_coords):
+    mock_up_mm = _get_nan_filled_data_set(dims, variables)
+    if set_mm_coords:
+        mock_up_mm = mock_up_mm.set_coords(
+            [v for v in mock_up_mm.data_vars.keys()])
+
+    file_name = str(tmpdir.join("mesh_mask.nc"))
+
+    mock_up_mm.to_netcdf(file_name)
+
+    return_ds = preprocess_orca(file_name, mock_up_mm)
