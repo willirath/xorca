@@ -1,7 +1,6 @@
 """Test the pre-processing lib."""
 
 import numpy as np
-from pathlib import Path
 import pytest
 import xarray as xr
 
