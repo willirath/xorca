@@ -127,7 +127,7 @@ def force_sign_of_coordinate(ds):
     return ds
 
 
-def _open_mm_dataset(mm_files):
+def open_mf_or_dataset(mm_files):
     """Open mm_files as either a multi-file or a single file xarray Dataset."""
     try:
         ds_mm = xr.open_mfdataset(mm_files)
@@ -162,7 +162,7 @@ def preprocess_orca(mm_files, ds):
 
     """
     # construct minimal grid-aware data set from mesh-mask files
-    ds_mm = _open_mm_dataset(mm_files)
+    ds_mm = open_mf_or_dataset(mm_files)
     ds_mm = trim_and_squeeze(ds_mm)
     return_ds = create_minimal_coords_ds(ds_mm)
 
