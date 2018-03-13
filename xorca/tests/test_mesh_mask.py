@@ -5,8 +5,11 @@ import pytest
 import xarray as xr
 
 from xorca.lib import (copy_coords, copy_vars, create_minimal_coords_ds,
-                       trim_and_squeeze)
+                       force_sign_of_coordinate, trim_and_squeeze)
 
+
+# See the RNG
+np.random.RandomState(seed=137)
 
 # This is derived from
 # `meshmask/ORCA025.L46.LIM2vp.JRA.XIOS2.KMS-T002_mask.nc`,
@@ -98,6 +101,28 @@ _mm_vars_old = {
     "e3w_0": ("t", "z")
 }
 
+# Same as `_mm_vars_nn_msh_3` but with additional variables
+_mm_vars_nn_msh_3_added_misshaped_vars = _mm_vars_nn_msh_3
+_mm_vars_nn_msh_3_added_misshaped_vars.update({
+    "e3t": ("t", "z"),
+    "e3u": ("t", "z"),
+    "e3v": ("t", "z"),
+    "e3w": ("t", "z")})
+
+# Same as `_mm_vars_nn_msh_3` but with additional / modified variables
+_mm_vars_old_added_misshaped_vars = _mm_vars_old
+_mm_vars_old_added_misshaped_vars.update({
+    "e3t": ("t", "z"),
+    "e3u": ("t", "z"),
+    "e3v": ("t", "z"),
+    "e3w": ("t", "z"),
+    "e3t_0": ("t", "z", "y", "x"),
+    "e3u_0": ("t", "z", "y", "x"),
+    "e3v_0": ("t", "z", "y", "x"),
+    "e3w_0": ("t", "z", "y", "x"),
+    "gdept_1d": ("t", "z", "y", "x"),
+    "gdepw_1d": ("t", "z", "y", "x")})
+
 
 def _get_nan_filled_data_set(dims, variables):
 
@@ -113,16 +138,24 @@ def _get_nan_filled_data_set(dims, variables):
     return xr.Dataset(coords=coords, data_vars=data_vars)
 
 
-@pytest.mark.parametrize('variables', [_mm_vars_nn_msh_3, _mm_vars_old])
+@pytest.mark.parametrize('set_mm_coords', [False, True])
+@pytest.mark.parametrize('variables',
+                         [_mm_vars_nn_msh_3,
+                          _mm_vars_old,
+                          _mm_vars_nn_msh_3_added_misshaped_vars])
 @pytest.mark.parametrize(
     'dims', [
         {"t": 1, "z": 46, "y": 100, "x": 100},
         pytest.param({"t": 1, "z": 46, "y": 1021, "x": 1442},
                      marks=pytest.mark.xfail)
     ])
-def test_copy_coords(dims, variables):
+def test_copy_coords(dims, variables, set_mm_coords):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     mock_up_mm = trim_and_squeeze(mock_up_mm).squeeze()
+
+    if set_mm_coords:
+        mock_up_mm = mock_up_mm.set_coords(
+            [v for v in mock_up_mm.data_vars.keys()])
 
     return_ds = create_minimal_coords_ds(mock_up_mm)
     return_ds = copy_coords(return_ds, mock_up_mm)
@@ -135,7 +168,10 @@ def test_copy_coords(dims, variables):
     assert all((tc in return_ds.coords) for tc in target_coords)
 
 
-@pytest.mark.parametrize('variables', [_mm_vars_nn_msh_3, _mm_vars_old])
+@pytest.mark.parametrize('variables',
+                         [_mm_vars_nn_msh_3,
+                          _mm_vars_nn_msh_3_added_misshaped_vars,
+                          _mm_vars_old])
 @pytest.mark.parametrize(
     'dims', [
         {"t": 1, "z": 46, "y": 100, "x": 100},
@@ -154,3 +190,23 @@ def test_copy_vars(dims, variables):
         "tmask", "umask", "vmask", "fmask"]
 
     assert all((tv in return_ds.data_vars) for tv in target_vars)
+
+
+@pytest.mark.parametrize('depth_c',
+                         [np.random.randn(46),
+                          np.abs(np.random.randn(46)),
+                          np.abs(np.random.randn(46))])
+@pytest.mark.parametrize('depth_l',
+                         [np.random.randn(46),
+                          np.abs(np.random.randn(46)),
+                          np.abs(np.random.randn(46))])
+def test_force_sign(depth_c, depth_l):
+    input_ds = xr.Dataset({
+        "depth_c": (["z_c", ], depth_c),
+        "depth_l": (["z_l", ], depth_l),
+    })
+    input_ds = input_ds.set_coords(("depth_c", "depth_l"))
+    return_ds = force_sign_of_coordinate(input_ds)
+
+    assert all(return_ds.coords["depth_c"].data <= 0)
+    assert all(return_ds.coords["depth_l"].data <= 0)
