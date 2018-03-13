@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from xorca.lib import (copy_coords, create_minimal_coords_ds, trim_and_squeeze)
+from xorca.lib import (copy_coords, copy_vars, create_minimal_coords_ds,
+                       trim_and_squeeze)
 
 
 # This is derived from
@@ -132,3 +133,24 @@ def test_copy_coords(dims, variables):
         "llon_cc", "llon_cr", "llon_rc", "llon_rr"]
 
     assert all((tc in return_ds.coords) for tc in target_coords)
+
+
+@pytest.mark.parametrize('variables', [_mm_vars_nn_msh_3, _mm_vars_old])
+@pytest.mark.parametrize(
+    'dims', [
+        {"t": 1, "z": 46, "y": 100, "x": 100},
+        pytest.param({"t": 1, "z": 46, "y": 1021, "x": 1442},
+                     marks=pytest.mark.xfail)
+    ])
+def test_copy_vars(dims, variables):
+    mock_up_mm = _get_nan_filled_data_set(dims, variables)
+    mock_up_mm = trim_and_squeeze(mock_up_mm).squeeze()
+
+    return_ds = create_minimal_coords_ds(mock_up_mm)
+    return_ds = copy_vars(return_ds, mock_up_mm)
+
+    target_vars = [
+        "e1t", "e2t", "e3t", "e1u", "e2u", "e3u", "e1v", "e2v", "e3v",
+        "tmask", "umask", "vmask", "fmask"]
+
+    assert all((tv in return_ds.data_vars) for tv in target_vars)

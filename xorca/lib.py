@@ -88,9 +88,14 @@ def copy_vars(return_ds, raw_ds):
     for key, names in orca_names.orca_variables.items():
         new_name = key
         new_dims = names["dims"]
-        old_name = names.get("old_name", new_name)
-        if old_name in raw_ds:
-            return_ds[new_name] = (new_dims, raw_ds[old_name].data)
+        old_names = names.get("old_names", [new_name, ])
+        for old_name in old_names:
+            if old_name in raw_ds:
+                try:
+                    return_ds[new_name] = (new_dims, raw_ds[old_name].data)
+                    break
+                except ValueError as e:
+                    pass
     return return_ds
 
 
