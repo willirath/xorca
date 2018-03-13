@@ -54,13 +54,28 @@ def copy_coords(return_ds, ds_in):
     for key, names in orca_names.orca_coords.items():
         new_name = key
         new_dims = names["dims"]
-        old_name = names.get("old_name", new_name)
-        if old_name in ds_in.coords:
-            return_ds.coords[new_name] = (new_dims,
-                                          ds_in.coords[old_name].data)
-        if old_name in ds_in:
-            return_ds.coords[new_name] = (new_dims,
-                                          ds_in[old_name].data)
+        for old_name in names.get("old_names", [new_name, ]):
+
+            # This will first try and copy `old_name` from the input ds coords
+            # and then from the input ds variables.  As soon as a ds can be
+            # copied sucessfully (that is , if they are present and have the
+            # correct shape), the loop is broken and the next target coordinate
+            # will be built.
+            if old_name in ds_in.coords:
+                try:
+                    return_ds.coords[new_name] = (new_dims,
+                                                  ds_in.coords[old_name].data)
+                    break
+                except ValueError as e:
+                    pass
+            if old_name in ds_in:
+                try:
+                    return_ds.coords[new_name] = (new_dims,
+                                                  ds_in[old_name].data)
+                    break
+                except ValueError as e:
+                    pass
+
     return return_ds
 
 
