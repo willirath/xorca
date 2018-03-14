@@ -6,7 +6,7 @@ import xarray as xr
 from . import orca_names
 
 
-def trim_and_squeeze(ds, model_config=None):
+def trim_and_squeeze(ds, model_config=None, y_slice=None, x_slice=None):
     """Remove redundant grid points and drop singleton dimensions.
 
     Parameters
@@ -14,12 +14,18 @@ def trim_and_squeeze(ds, model_config=None):
     ds : xr Dataset | DataArray
         The object to trim.
     model_config : immutable
-        Selects pre-defined trimming setup.  If omitted, no trimming will be
-        done.
+        Selects pre-defined trimming setup.  If omitted, or if the model_config
+        is not known here, no trimming will be done.
 
         Possible configurations:
              `"ORCA05"` : `ds.isel(y=slice(1, 11)).isel(x=slice(1, -1))`
              [TBC]
+    y_slice : tuple
+        How to slice in y-dimension?  `y_slice=(1, -1)` will slice from 1 to -1
+        which amounts to dropping the first and last index along the
+        y-dimension.  Mutually exclusive with `model_config`.
+    x_slice : tuple
+        See y_slice.  Mutually exclusive with `model_config`.
 
     Returns
     -------
@@ -31,13 +37,13 @@ def trim_and_squeeze(ds, model_config=None):
         "ORCA05": {"y": (1, -1), "x": (1, -1)},
     }
     yx_slice_dict = how_to_trim.get(
-        model_config, {"y": (None, None), "x": (None, None)})
-    y_slice = yx_slice_dict["y"]
-    x_slice = yx_slice_dict["x"]
+        model_config, {})
+    y_slice = yx_slice_dict.get("y", y_slice)
+    x_slice = yx_slice_dict.get("x", x_slice)
 
-    if "y" in ds.dims:
+    if (y_slice is not None) and ("y" in ds.dims):
         ds = ds.isel(y=slice(*y_slice))
-    if "x" in ds.dims:
+    if (x_slice is not None) and ("x" in ds.dims):
         ds = ds.isel(x=slice(*x_slice))
     ds = ds.squeeze()
     return ds
