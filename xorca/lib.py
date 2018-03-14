@@ -6,7 +6,9 @@ import xarray as xr
 from . import orca_names
 
 
-def trim_and_squeeze(ds, model_config=None, y_slice=None, x_slice=None):
+def trim_and_squeeze(ds,
+                     model_config=None, y_slice=None, x_slice=None,
+                     **kwargs):
     """Remove redundant grid points and drop singleton dimensions.
 
     Parameters
@@ -170,7 +172,7 @@ def open_mf_or_dataset(mm_files):
     return ds_mm
 
 
-def preprocess_orca(mm_files, ds):
+def preprocess_orca(mm_files, ds, **kwargs):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -196,12 +198,12 @@ def preprocess_orca(mm_files, ds):
     """
     # construct minimal grid-aware data set from mesh-mask files
     ds_mm = open_mf_or_dataset(mm_files)
-    ds_mm = trim_and_squeeze(ds_mm)
+    ds_mm = trim_and_squeeze(ds_mm, **kwargs)
     return_ds = create_minimal_coords_ds(ds_mm)
 
     # make sure dims are called correctly and trim input ds
     ds = rename_dims(ds)
-    ds = trim_and_squeeze(ds)
+    ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
     return_ds = copy_coords(return_ds, ds_mm)
