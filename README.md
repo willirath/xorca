@@ -18,6 +18,8 @@ integration / summation is possible.
 
 ### Example: Calculate the barotropic stream function in 2 lines
 
+After a short preamble which imports the package and loads the data:
+
 ```python
 import xarray as xr
 import xgcm
@@ -26,15 +28,21 @@ from xorca.lib import preprocess_orca
 original_ds = xr.open_mfdataset(list_of_all_model_output_files)
 ds = preprocess_orca(path_to_mesh_mask_file, original_ds)
 grid = xgcm.Grid(ds, periodic=["Y", "X"])
+```
 
+This is all that's needed to define and calculate the barotropic stream
+function for all time steps:
+```
 U_bt = (ds.vozocrtx * ds.e3u).sum("z_c")
 psi = grid.cumsum(- U_bt * ds.e2u, "Y") / 1.0e6
+```
 
+And this triggers the actual computation and produces the image:
+```
 psi.mean("t").plot(size=9);
 ```
 
 ![barotropic stream function](doc/images/barotropic_stream_function.png)
-
 
 ### More examples
 
