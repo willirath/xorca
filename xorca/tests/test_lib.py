@@ -10,8 +10,11 @@ from xorca.lib import (create_minimal_coords_ds, rename_dims, trim_and_squeeze)
 
 @pytest.mark.parametrize(
     "model_config_and_trimming",
-    [{"model_config": "ORCA05", "y": (1, -1), "x": (1, -1)},
-     {"model_config": "VIKING20x", "y": (None, None), "x": (None, None)},
+    [{"model_config": "GLOBAL", "y": (1, -1), "x": (1, -1)},
+     {"model_config": "NEST", "y": (None, None), "x": (None, None)},
+     {"model_config": None, "y": (None, None), "x": (None, None)},
+     {"model_config": "gLOBaL", "y": (1, -1), "x": (1, -1)},
+     {"model_config": "nest", "y": (None, None), "x": (None, None)},
      {"model_config": None, "y": (None, None), "x": (None, None)}])
 def test_trim_and_sqeeze_by_model_config(model_config_and_trimming):
     N = 102
@@ -31,8 +34,8 @@ def test_trim_and_sqeeze_by_model_config(model_config_and_trimming):
     assert ds_t.dims["x"] == ds_trimmed_here.dims["x"]
 
 
-@pytest.mark.parametrize("y_slice", [(1, -1), (2, -2), (None, None)])
-@pytest.mark.parametrize("x_slice", [(1, -1), (2, -2), (None, None)])
+@pytest.mark.parametrize("y_slice", [(1, -1), (2, -2), None])
+@pytest.mark.parametrize("x_slice", [(1, -1), (2, -2), None])
 def test_trim_and_sqeeze_by_yx_slice(y_slice, x_slice):
     N = 102
     ds = xr.Dataset(
@@ -41,7 +44,17 @@ def test_trim_and_sqeeze_by_yx_slice(y_slice, x_slice):
                 "x": (["x", ],  range(N))})
 
     ds_t = trim_and_squeeze(ds, y_slice=y_slice, x_slice=x_slice)
-    ds_trimmed_here = ds.isel(x=slice(*x_slice), y=slice(*y_slice))
+
+    # To also cover partial overrides, we check for None's here
+    ds_trimmed_here = ds
+    if y_slice is None:
+        ds_trimmed_here = ds_trimmed_here.isel(y=slice(1, -1))
+    else:
+        ds_trimmed_here = ds_trimmed_here.isel(y=slice(*y_slice))
+    if x_slice is None:
+        ds_trimmed_here = ds_trimmed_here.isel(x=slice(1, -1))
+    else:
+        ds_trimmed_here = ds_trimmed_here.isel(x=slice(*x_slice))
 
     assert "degen" not in ds_t.dims
     assert ds_t.dims["y"] == ds_trimmed_here.dims["y"]
