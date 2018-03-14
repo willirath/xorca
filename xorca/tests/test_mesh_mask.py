@@ -148,9 +148,7 @@ def _get_nan_filled_data_set(dims, variables):
 @pytest.mark.parametrize(
     'dims', [
         {"t": 1, "z": 46, "y": 100, "x": 100},
-        pytest.param({"t": 1, "z": 46, "y": 1021, "x": 1442},
-                     marks=pytest.mark.xfail)
-    ])
+        {"t": 1, "z": 46, "y": 222, "x": 222}])
 def test_copy_coords(dims, variables, set_mm_coords):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     mock_up_mm = trim_and_squeeze(mock_up_mm).squeeze()
@@ -177,8 +175,7 @@ def test_copy_coords(dims, variables, set_mm_coords):
 @pytest.mark.parametrize(
     'dims', [
         {"t": 1, "z": 46, "y": 100, "x": 100},
-        pytest.param({"t": 1, "z": 46, "y": 1021, "x": 1442},
-                     marks=pytest.mark.xfail)
+        {"t": 1, "z": 46, "y": 222, "x": 222}
     ])
 def test_copy_vars(dims, variables):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
