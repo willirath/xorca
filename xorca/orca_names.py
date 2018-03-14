@@ -9,7 +9,7 @@ orca_coords = {
                 "old_names": ["gdept_1d", "gdept_0"],
                 "force_sign": -1.0},
     "depth_l": {"dims": ["z_l", ],
-                "old_names": ["gdepw_1d", "gdept_0"],
+                "old_names": ["gdepw_1d", "gdepw_0"],
                 "force_sign": -1.0},
     "llat_cc": {"dims": ["y_c", "x_c"], "old_names": ["gphit", ]},
     "llat_cr": {"dims": ["y_c", "x_r"], "old_names": ["gphiu", ]},
