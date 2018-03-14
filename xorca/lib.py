@@ -201,12 +201,20 @@ def preprocess_orca(mm_files, ds, **kwargs):
         single file name, a sequence of Paths or file names, a glob statement.
     ds : xarray dataset
         Xarray dataset to be processed before concatenating.
+    input_ds_chunks : dict
+        Chunks for the ds to be preprocessed.
 
     Returns
     -------
     xarray dataset
 
     """
+    # make sure ds is chunked
+    _chunks = {}
+    _chunks.update(kwargs.get("chunk_input_ds", {}))
+    _chunks = {k: v for k, v in _chunks.items() if k in ds.dims}
+    ds = ds.chunk(_chunks)
+
     # construct minimal grid-aware data set from mesh-mask files
     ds_mm = open_mf_or_dataset(mm_files)
     ds_mm = trim_and_squeeze(ds_mm, **kwargs)
