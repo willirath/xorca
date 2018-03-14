@@ -1,5 +1,6 @@
 """Test reading the mesh masks."""
 
+from dask.array.core import Array as dask_array
 import numpy as np
 from pathlib import Path
 import pytest
@@ -276,4 +277,7 @@ def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords):
     mock_up_mm.to_netcdf(file_name)
 
     # TODO: Check that the returned dataset is actually looking good
-    preprocess_orca(file_name, mock_up_mm)
+    return_ds = preprocess_orca(file_name, mock_up_mm)
+
+    # make sure data are dask arrays
+    assert isinstance(return_ds["e3t"].data, dask_array)
