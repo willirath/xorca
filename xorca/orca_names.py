@@ -71,6 +71,7 @@ orca_variables = {
     "e1v": {"dims": ["y_r", "x_c"]},
     "e2v": {"dims": ["y_r", "x_c"]},
     "e3v": {"dims": ["z_c", "y_r", "x_c"], "old_names": ["e3v", "e3v_0"]},
+    "e3w": {"dims": ["z_l", "y_c", "x_c"], "old_names": ["e3w", "e3w_0"]},
     "tmask": {"dims": ["z_c", "y_c", "x_c"]},
     "umask": {"dims": ["z_c", "y_c", "x_r"]},
     "vmask": {"dims": ["z_c", "y_r", "x_c"]},
