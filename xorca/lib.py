@@ -6,12 +6,39 @@ import xarray as xr
 from . import orca_names
 
 
-def trim_and_squeeze(ds):
-    """Remove redundant grid points and drop singleton dimensions."""
+def trim_and_squeeze(ds, model_config=None):
+    """Remove redundant grid points and drop singleton dimensions.
+
+    Parameters
+    ----------
+    ds : xr Dataset | DataArray
+        The object to trim.
+    model_config : immutable
+        Selects pre-defined trimming setup.  If omitted, no trimming will be
+        done.
+
+        Possible configurations:
+             `"ORCA05"` : `ds.isel(y=slice(1, 11)).isel(x=slice(1, -1))`
+             [TBC]
+
+    Returns
+    -------
+    trimmed ds
+
+    """
+
+    how_to_trim = {
+        "ORCA05": {"y": (1, -1), "x": (1, -1)},
+    }
+    yx_slice_dict = how_to_trim.get(
+        model_config, {"y": (None, None), "x": (None, None)})
+    y_slice = yx_slice_dict["y"]
+    x_slice = yx_slice_dict["x"]
+
     if "y" in ds.dims:
-        ds = ds.isel(y=slice(1, -1))
+        ds = ds.isel(y=slice(*y_slice))
     if "x" in ds.dims:
-        ds = ds.isel(x=slice(1, -1))
+        ds = ds.isel(x=slice(*y_slice))
     ds = ds.squeeze()
     return ds
 

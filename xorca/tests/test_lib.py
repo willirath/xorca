@@ -8,7 +8,12 @@ import xarray as xr
 from xorca.lib import (create_minimal_coords_ds, rename_dims, trim_and_squeeze)
 
 
-def test_trim_and_sqeeze():
+@pytest.mark.parametrize(
+    "model_config_and_trimming",
+    [{"model_config": "ORCA05", "y": (1, -1), "x": (1, -1)},
+     {"model_config": "VIKING20x", "y": (None, None), "x": (None, None)},
+     {"model_config": None, "y": (None, None), "x": (None, None)}])
+def test_trim_and_sqeeze(model_config_and_trimming):
     """Make sure to trim 2 slices and drop singletons."""
     N = 102
     ds = xr.Dataset(
@@ -16,11 +21,15 @@ def test_trim_and_sqeeze():
                 "y": (["y", ], range(N)),
                 "x": (["x", ],  range(N))})
 
-    ds_t = trim_and_squeeze(ds)
+    model_config = model_config_and_trimming["model_config"]
+    x_sel = model_config_and_trimming["x"]
+    y_sel = model_config_and_trimming["y"]
+    ds_t = trim_and_squeeze(ds, model_config=model_config)
+    ds_trimmed_here = ds.isel(x=slice(*x_sel), y=slice(*y_sel))
 
     assert "degen" not in ds_t.dims
-    assert ds_t.dims["y"] == (N - 2)
-    assert ds_t.dims["x"] == (N - 2)
+    assert ds_t.dims["y"] == ds_trimmed_here.dims["y"]
+    assert ds_t.dims["x"] == ds_trimmed_here.dims["x"]
 
 
 def test_create_minimal_coords_ds():
