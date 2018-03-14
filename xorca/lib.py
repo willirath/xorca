@@ -38,7 +38,7 @@ def trim_and_squeeze(ds, model_config=None):
     if "y" in ds.dims:
         ds = ds.isel(y=slice(*y_slice))
     if "x" in ds.dims:
-        ds = ds.isel(x=slice(*y_slice))
+        ds = ds.isel(x=slice(*x_slice))
     ds = ds.squeeze()
     return ds
 
