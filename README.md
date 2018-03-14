@@ -52,14 +52,19 @@ See the example notebook for hints on where this might end:
 
 ## Installation
 
-Install Xarray and its dependencies.
-
-Install XGCM:
+First, install all dependencies (assuming you have conda installed and in the
+path):
 ```bash
-pip install git+https://github.com/xgcm/xgcm.git@master
+curl \
+    https://git.geomar.de/willi-rath/xorca/raw/master/environment.yml \
+    -o xorca_environment.yml
+conda env create -n xorca_env -f xorca_environment.yml
 ```
 
-Install XORCA:
+Then install XORCA:
 ```bash
+source activate xorca_env
 pip install git+https://git.geomar.de/willi-rath/xorca.git@master
 ```
+
+To use, `source activate xorca_env` before, e.g., starting `jupyter notebook`.
