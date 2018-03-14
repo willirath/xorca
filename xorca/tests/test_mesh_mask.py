@@ -259,7 +259,7 @@ def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_preprocess_orcea(tmpdir, variables, dims, set_mm_coords):
+def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(

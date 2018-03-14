@@ -6,12 +6,47 @@ import xarray as xr
 from . import orca_names
 
 
-def trim_and_squeeze(ds):
-    """Remove redundant grid points and drop singleton dimensions."""
-    if "y" in ds.dims:
-        ds = ds.isel(y=slice(1, -1))
-    if "x" in ds.dims:
-        ds = ds.isel(x=slice(1, -1))
+def trim_and_squeeze(ds,
+                     model_config=None, y_slice=None, x_slice=None,
+                     **kwargs):
+    """Remove redundant grid points and drop singleton dimensions.
+
+    Parameters
+    ----------
+    ds : xr Dataset | DataArray
+        The object to trim.
+    model_config : immutable
+        Selects pre-defined trimming setup.  If omitted, or if the model_config
+        is not known here, no trimming will be done.
+
+        Possible configurations:
+             `"ORCA05"` : `ds.isel(y=slice(1, 11)).isel(x=slice(1, -1))`
+             [TBC]
+    y_slice : tuple
+        How to slice in y-dimension?  `y_slice=(1, -1)` will slice from 1 to -1
+        which amounts to dropping the first and last index along the
+        y-dimension.  Mutually exclusive with `model_config`.
+    x_slice : tuple
+        See y_slice.  Mutually exclusive with `model_config`.
+
+    Returns
+    -------
+    trimmed ds
+
+    """
+
+    how_to_trim = {
+        "ORCA05": {"y": (1, -1), "x": (1, -1)},
+    }
+    yx_slice_dict = how_to_trim.get(
+        model_config, {})
+    y_slice = yx_slice_dict.get("y", y_slice)
+    x_slice = yx_slice_dict.get("x", x_slice)
+
+    if (y_slice is not None) and ("y" in ds.dims):
+        ds = ds.isel(y=slice(*y_slice))
+    if (x_slice is not None) and ("x" in ds.dims):
+        ds = ds.isel(x=slice(*x_slice))
     ds = ds.squeeze()
     return ds
 
@@ -137,7 +172,7 @@ def open_mf_or_dataset(mm_files):
     return ds_mm
 
 
-def preprocess_orca(mm_files, ds):
+def preprocess_orca(mm_files, ds, **kwargs):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -163,12 +198,12 @@ def preprocess_orca(mm_files, ds):
     """
     # construct minimal grid-aware data set from mesh-mask files
     ds_mm = open_mf_or_dataset(mm_files)
-    ds_mm = trim_and_squeeze(ds_mm)
+    ds_mm = trim_and_squeeze(ds_mm, **kwargs)
     return_ds = create_minimal_coords_ds(ds_mm)
 
     # make sure dims are called correctly and trim input ds
     ds = rename_dims(ds)
-    ds = trim_and_squeeze(ds)
+    ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
     return_ds = copy_coords(return_ds, ds_mm)
