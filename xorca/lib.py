@@ -213,10 +213,11 @@ def force_sign_of_coordinate(ds, **kwargs):
 
 def open_mf_or_dataset(mm_files, **kwargs):
     """Open mm_files as either a multi-file or a single file xarray Dataset."""
+
     try:
         ds_mm = xr.open_mfdataset(mm_files)
     except TypeError as e:
-        ds_mm = xr.open_dataset(mm_files)
+        ds_mm = xr.open_dataset(mm_files, chunks={})
 
     return ds_mm
 
@@ -247,11 +248,14 @@ def preprocess_orca(mm_files, ds, **kwargs):
     xarray dataset
 
     """
-    # make sure ds is chunked
-    _chunks = {}
-    _chunks.update(kwargs.get("chunk_input_ds", {}))
-    _chunks = {k: v for k, v in _chunks.items() if k in ds.dims}
-    ds = ds.chunk(_chunks)
+    # make sure input ds is chunked
+    input_ds_chunks = {}
+    input_ds_chunks.update(kwargs.get("input_ds_chunks", {}))
+    input_ds_chunks = {k: v
+                       for k, v in input_ds_chunks.items()
+                       if k in ds.dims}
+
+    ds = ds.chunk(input_ds_chunks)
 
     # construct minimal grid-aware data set from mesh-mask files
     ds_mm = open_mf_or_dataset(mm_files, **kwargs)
