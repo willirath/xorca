@@ -5,7 +5,9 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from xorca.lib import (create_minimal_coords_ds, rename_dims, trim_and_squeeze)
+from xorca.lib import (create_minimal_coords_ds, get_name_dict, rename_dims,
+                       trim_and_squeeze)
+from xorca import orca_names
 
 
 @pytest.mark.parametrize(
@@ -127,3 +129,28 @@ def test_rename_dims(dims):
 
     assert all(d in da_renamed.dims for d in _dims.keys())
     assert all(v[1] not in da_renamed.dims for k, v in _dims.items())
+
+
+@pytest.mark.parametrize("dict_name",
+                         ["rename_dims", "orca_variables",
+                          "orca_coords", "this_one_does_not_exist"])
+@pytest.mark.parametrize("update_dict",
+                         [{},
+                          {"SIGMA": "sigma"},
+                          {"my_tracer": {"dims": ["t", "z_c", "y_c", "x_c"]}}])
+def test_get_name_dict(dict_name, update_dict):
+    _kwargs = {"update_" + dict_name: update_dict}
+    dict_updated = get_name_dict(dict_name, **_kwargs)
+
+    dict_updated_here = orca_names.__dict__.get(dict_name, {}).copy()
+    dict_updated_here.update(update_dict)
+
+    assert all(
+        (k in dict_updated_here.keys()) and
+        (v == dict_updated_here[k])
+        for k, v in dict_updated.items())
+
+    assert all(
+        (k in dict_updated.keys()) and
+        (v == dict_updated[k])
+        for k, v in dict_updated_here.items())
