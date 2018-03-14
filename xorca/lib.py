@@ -91,6 +91,44 @@ def create_minimal_coords_ds(ds_mm):
     return xr.Dataset(coords=coords)
 
 
+def get_name_dict(dict_name, **kwargs):
+    """Return potentially updated name dictionary.
+
+    Parameters
+    ----------
+    dict_name : str
+        Name of the dict from `xorca.orca_names` to be returned / updated.
+        `get_name_dict` will look for a `kwarg` called `"update_" + dict_name`
+        that will be used to override / add keys from `dict_name`.
+
+        If `dict_name` is not in `xorca.orca_names`, an empty dict will be
+        updated with `kwargs["update_" + dict_name]`.
+
+    Returns
+    -------
+    dict
+        Updated dict.
+
+
+    Examples
+    --------
+    ```python
+    print(get_name_dict("rename_dims"))
+    # -> {"time_counter": "t", "Z": "z", "Y": "y", "X": "x"}
+
+    print(get_name_dict("rename_dims", update_rename_dims={"SIGMA": "sigma"}))
+    # -> {"time_counter": "t", "Z": "z", "Y": "y", "X": "x", "SIGMA": "sigma"}
+
+    print(get_name_dict("not_defined", update_rename_dims={"SIGMA": "sigma"}))
+    # -> {"SIGMA": "sigma"}
+    ```
+    """
+    orig_dict = orca_names.__dict__.get(dict_name, {}).copy()
+    update_dict = kwargs.get("update_" + dict_name)
+    orig_dict.update(update_dict)
+    return orig_dict
+
+
 def copy_coords(return_ds, ds_in):
     """Copy coordinates and map them to the correct grid.
 
