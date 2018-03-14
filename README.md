@@ -16,7 +16,7 @@ that is understood by XGCM.  With this, grid-aware differentiation and
 integration / summation is possible.
 
 
-### Example: Barotropic stream function in XXX lines
+### Example: Calculate the barotropic stream function in 2 lines
 
 ```python
 import xarray as xr
@@ -25,11 +25,9 @@ from xorca.lib import preprocess_orca
 
 original_ds = xr.open_mfdataset(list_of_all_model_output_files)
 ds = preprocess_orca(path_to_mesh_mask_file, original_ds)
-
 grid = xgcm.Grid(ds, periodic=["Y", "X"])
 
 U_bt = (ds.vozocrtx * ds.e3u).sum("z_c")
-
 psi = grid.cumsum(- U_bt * ds.e2u, "Y") / 1.0e6
 
 psi.mean("t").plot(size=9);
