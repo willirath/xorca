@@ -149,7 +149,21 @@ def _get_nan_filled_data_set(dims, variables):
     'dims', [
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222}])
-def test_copy_coords(dims, variables, set_mm_coords):
+@pytest.mark.parametrize("override_coords", [False, True])
+def test_copy_coords(dims, variables, set_mm_coords, override_coords):
+    target_coords = [
+        "depth_c", "depth_l",
+        "llat_cc", "llat_cr", "llat_rc", "llat_rr",
+        "llon_cc", "llon_cr", "llon_rc", "llon_rr"]
+
+    _kwargs = {}
+
+    if override_coords:
+        _kwargs["update_orca_coords"] = {"sigma_c": {"dims": ["z_c", ]}}
+        target_coords.append("sigma_c")
+        variables = variables.copy()
+        variables.update({"sigma_c": ("t", "z", )})
+
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     mock_up_mm = trim_and_squeeze(mock_up_mm).squeeze()
 
@@ -157,13 +171,8 @@ def test_copy_coords(dims, variables, set_mm_coords):
         mock_up_mm = mock_up_mm.set_coords(
             [v for v in mock_up_mm.data_vars.keys()])
 
-    return_ds = create_minimal_coords_ds(mock_up_mm)
-    return_ds = copy_coords(return_ds, mock_up_mm)
-
-    target_coords = [
-        "depth_c", "depth_l",
-        "llat_cc", "llat_cr", "llat_rc", "llat_rr",
-        "llon_cc", "llon_cr", "llon_rc", "llon_rr"]
+    return_ds = create_minimal_coords_ds(mock_up_mm, **_kwargs)
+    return_ds = copy_coords(return_ds, mock_up_mm, **_kwargs)
 
     assert all((tc in return_ds.coords) for tc in target_coords)
 
