@@ -62,7 +62,7 @@ def trim_and_squeeze(ds,
     return ds
 
 
-def create_minimal_coords_ds(ds_mm):
+def create_minimal_coords_ds(ds_mm, **kwargs):
     """Create a minimal set of coordinates from a mesh-mask dataset.
 
     This creates `"central"` and `"right"` grid points for the horizontal grid
@@ -124,18 +124,18 @@ def get_name_dict(dict_name, **kwargs):
     ```
     """
     orig_dict = orca_names.__dict__.get(dict_name, {}).copy()
-    update_dict = kwargs.get("update_" + dict_name)
+    update_dict = kwargs.get("update_" + dict_name, {})
     orig_dict.update(update_dict)
     return orig_dict
 
 
-def copy_coords(return_ds, ds_in):
+def copy_coords(return_ds, ds_in, **kwargs):
     """Copy coordinates and map them to the correct grid.
 
     This copies all coordinates defined in `xorca.orca_names.orca_coords` from
     `ds_in` to `return_ds`.
     """
-    for key, names in orca_names.orca_coords.items():
+    for key, names in get_name_dict("orca_coords", **kwargs).items():
         new_name = key
         new_dims = names["dims"]
         for old_name in names.get("old_names", [new_name, ]):
@@ -163,13 +163,13 @@ def copy_coords(return_ds, ds_in):
     return return_ds
 
 
-def copy_vars(return_ds, raw_ds):
+def copy_vars(return_ds, raw_ds, **kwargs):
     """Copy variables and map them to the correct grid.
 
     This copies all variables defined in `xorca.orca_names.orca_variables` from
     `raw_ds` to `return_ds`.
     """
-    for key, names in orca_names.orca_variables.items():
+    for key, names in get_name_dict("orca_variables", **kwargs).items():
         new_name = key
         new_dims = names["dims"]
         old_names = names.get("old_names", [new_name, ])
@@ -183,27 +183,27 @@ def copy_vars(return_ds, raw_ds):
     return return_ds
 
 
-def rename_dims(ds):
+def rename_dims(ds, **kwargs):
     """Rename dimensions.
 
     This renames all dimensions defined in `xorca.orca_names.rename_dims` and
     returns the data set with renamed dimensinos.
     """
     rename_dict = {
-        k: v for k, v in orca_names.rename_dims.items()
+        k: v for k, v in get_name_dict("rename_dims", **kwargs).items()
         if k in ds.dims
     }
     return ds.rename(rename_dict)
 
 
-def force_sign_of_coordinate(ds):
+def force_sign_of_coordinate(ds, **kwargs):
     """Force definite sign of coordinates.
 
     For all coordinates defined in `xorca.orca_names.orca_coordinates`, enforce
     a sign if there is an item telling us to do so.  This is most useful to
     ensure that, e.g., depth is _always_ pointing upwards or downwards.
     """
-    for k, v in orca_names.orca_coords.items():
+    for k, v in get_name_dict("orca_coords", *kwargs).items():
         force_sign = v.get("force_sign", False)
         if force_sign and k in ds.coords:
             ds[k] = force_sign * abs(ds[k])
@@ -211,7 +211,7 @@ def force_sign_of_coordinate(ds):
     return ds
 
 
-def open_mf_or_dataset(mm_files):
+def open_mf_or_dataset(mm_files, **kwargs):
     """Open mm_files as either a multi-file or a single file xarray Dataset."""
     try:
         ds_mm = xr.open_mfdataset(mm_files)
@@ -246,22 +246,22 @@ def preprocess_orca(mm_files, ds, **kwargs):
 
     """
     # construct minimal grid-aware data set from mesh-mask files
-    ds_mm = open_mf_or_dataset(mm_files)
+    ds_mm = open_mf_or_dataset(mm_files, **kwargs)
     ds_mm = trim_and_squeeze(ds_mm, **kwargs)
-    return_ds = create_minimal_coords_ds(ds_mm)
+    return_ds = create_minimal_coords_ds(ds_mm, **kwargs)
 
     # make sure dims are called correctly and trim input ds
-    ds = rename_dims(ds)
+    ds = rename_dims(ds, **kwargs)
     ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
-    return_ds = copy_coords(return_ds, ds_mm)
-    return_ds = copy_coords(return_ds, ds)
+    return_ds = copy_coords(return_ds, ds_mm, **kwargs)
+    return_ds = copy_coords(return_ds, ds, **kwargs)
 
     # copy variables from the data set
-    return_ds = copy_vars(return_ds, ds)
+    return_ds = copy_vars(return_ds, ds, **kwargs)
 
     # Finally, make sure depth is positive upward
-    return_ds = force_sign_of_coordinate(return_ds)
+    return_ds = force_sign_of_coordinate(return_ds, **kwargs)
 
     return return_ds
