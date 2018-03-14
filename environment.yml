@@ -1,4 +1,4 @@
-name: py3_parcels
+name: py3_xorca
 channels:
   - conda-forge
 dependencies:

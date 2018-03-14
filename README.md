@@ -48,3 +48,18 @@ psi.mean("t").plot(size=9);
 
 See the example notebook for hints on where this might end:
 [notebooks/calculate_psi_speed_and_amoc.ipynb](notebooks/calculate_psi_speed_and_amoc.ipynb).
+
+
+## Installation
+
+Install Xarray and its dependencies.
+
+Install XGCM:
+```bash
+pip install git+https://github.com/xgcm/xgcm.git@master
+```
+
+Install XORCA:
+```bash
+pip install git+https://git.geomar.de/willi-rath/xorca.git@master
+```
