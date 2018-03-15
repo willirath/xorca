@@ -203,7 +203,7 @@ def force_sign_of_coordinate(ds, **kwargs):
     a sign if there is an item telling us to do so.  This is most useful to
     ensure that, e.g., depth is _always_ pointing upwards or downwards.
     """
-    for k, v in get_name_dict("orca_coords", *kwargs).items():
+    for k, v in get_name_dict("orca_coords", **kwargs).items():
         force_sign = v.get("force_sign", False)
         if force_sign and k in ds.coords:
             ds[k] = force_sign * abs(ds[k])
