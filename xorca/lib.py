@@ -1,5 +1,6 @@
 """Library for the conversion from NEMO output to XGCM data sets."""
 
+from itertools import chain
 import numpy as np
 import xarray as xr
 
@@ -269,7 +270,8 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     ds : xarray dataset
         Xarray dataset to be processed before concatenating.
     input_ds_chunks : dict
-        Chunks for the ds to be preprocessed.
+        Chunks for the ds to be preprocessed.  Pass chunking for any input
+        dimension that might be in the input data.
 
     Returns
     -------
@@ -305,3 +307,62 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     return_ds = set_time_independent_vars_to_coords(return_ds)
 
     return return_ds
+
+
+def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
+    """Create a grid-aware NEMO dataset.
+
+    Parameters
+    ----------
+    data_files : Path | sequence | string
+        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
+        single file name, a sequence of Paths or file names, a glob statement.
+    aux_files : Path | sequence | string
+        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
+        single file name, a sequence of Paths or file names, a glob statement.
+
+    Returns
+    -------
+    dataset
+
+    """
+
+    default_input_ds_chunks = {
+        "time_counter": 1, "t": 1,
+        "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
+        "y": 200, "x": 200
+    }
+
+    default_target_ds_chunks = {
+        "t": 1,
+        "z_c": 2, "z_l": 2,
+        "y_c": 200, "y_r": 200,
+        "x_c": 200, "x_r": 200
+    }
+
+    # First, read aux files to learn about all dimensions.  Then, open again
+    # and specify chunking for all applicable dims.  It is very important to
+    # already pass the `chunks` arg to `open_[mf]dataset`, to ensure
+    # distributed performance.
+    with xr.open_mfdataset(aux_files) as _aux_ds:
+        aux_ds_chunks = get_all_compatible_chunk_sizes(default_input_ds_chunks,
+                                                       _aux_ds)
+    aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks)
+
+    # Again, we first have to open all data sets to filter the input chunks.
+    _data_files_chunks = map(
+        lambda df: get_all_compatible_chunk_sizes(
+            default_input_ds_chunks, xr.open_dataset(df)),
+        data_files)
+    ds_xorca = xr.merge(
+        map(
+            lambda ds: preprocess_orca(aux_ds, ds),
+            chain(
+                map(lambda df, chunks: xr.open_dataset(df, chunks=chunks),
+                    data_files, _data_files_chunks),
+                [aux_ds, ])))
+
+    ds_xorca = ds_xorca.chunk(
+        get_all_compatible_chunk_sizes(default_target_ds_chunks, ds_xorca))
+
+    return ds_xorca
