@@ -309,7 +309,8 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     return return_ds
 
 
-def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
+def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
+                       **kwargs):
     """Create a grid-aware NEMO dataset.
 
     Parameters
@@ -326,6 +327,8 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
     targetds_chunks : dict
         Chunks for the final data set.  Pass chunking for any of the likely
         output dims: `("t", "z_c", "z_l", "y_c", "y_r", "x_c", "x_r")`
+    decode_cf : bool
+        Do we want the CF decoding to be done already?  Default is True.
 
     Returns
     -------
@@ -354,21 +357,23 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
     # and specify chunking for all applicable dims.  It is very important to
     # already pass the `chunks` arg to `open_[mf]dataset`, to ensure
     # distributed performance.
-    with xr.open_mfdataset(aux_files) as _aux_ds:
+    with xr.open_mfdataset(aux_files, decode_cf=decode_cf) as _aux_ds:
         aux_ds_chunks = get_all_compatible_chunk_sizes(
             input_ds_chunks, _aux_ds)
-    aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks)
+    aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks,
+                               decode_cf=decode_cf)
 
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_dataset(df)),
+            input_ds_chunks, xr.open_dataset(df, decode_cf=decode_cf)),
         data_files)
     ds_xorca = xr.merge(
         map(
             lambda ds: preprocess_orca(aux_ds, ds),
             chain(
-                map(lambda df, chunks: xr.open_dataset(df, chunks=chunks),
+                map(lambda df, chunks: xr.open_dataset(df, chunks=chunks,
+                                                       decode_cf=decode_cf),
                     data_files, _data_files_chunks),
                 [aux_ds, ])))
 
