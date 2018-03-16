@@ -215,7 +215,7 @@ def open_mf_or_dataset(data_files, **kwargs):
     """Open data_files as multi-file or a single-file xarray Dataset."""
 
     try:
-        mesh_mask = xr.open_mfdataset(data_files)
+        mesh_mask = xr.open_mfdataset(data_files, chunks={})
     except TypeError as e:
         mesh_mask = xr.open_dataset(data_files, chunks={})
 
@@ -240,6 +240,13 @@ def get_all_compatible_chunk_sizes(chunks, dobj):
         `dobj`.
     """
     return {k: v for k, v in chunks.items() if k in dobj.dims}
+
+
+def set_time_independent_vars_to_coords(ds):
+    """Make sure all time-independent variables are coordinates."""
+    return ds.set_coords([v for v in ds.data_vars.keys()
+                          if 't' not in ds[v].dims],
+                         inplace=False)
 
 
 def preprocess_orca(mesh_mask, ds, **kwargs):
@@ -291,7 +298,10 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     # copy variables from the data set
     return_ds = copy_vars(return_ds, ds, **kwargs)
 
-    # Finally, make sure depth is positive upward
+    # make sure depth is positive upward
     return_ds = force_sign_of_coordinate(return_ds, **kwargs)
+
+    # make everything that does not depend on time a coord
+    return_ds = set_time_independent_vars_to_coords(return_ds)
 
     return return_ds
