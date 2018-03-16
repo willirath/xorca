@@ -222,6 +222,26 @@ def open_mf_or_dataset(mm_files, **kwargs):
     return ds_mm
 
 
+def get_all_compatible_chunk_sizes(chunks, dobj):
+    """Return only thos chunks that are compatible with the given data.
+
+    Parameters
+    ----------
+    chunks : dict
+        Dictionary with all possible chunk sizes.  (Keys are dimension names,
+        values are integers for the corresponding chunk size.)
+    dobj : dataset or data array
+        Dimensions of dobj will be used to filter the `chunks` dict.
+
+    Returns
+    -------
+    dict
+        Dictionary with only those items of `chunks` that can be applied to
+        `dobj`.
+    """
+    return {k: v for k, v in chunks.items() if k in dobj.dims}
+
+
 def preprocess_orca(mm_files, ds, **kwargs):
     """Preprocess orca datasets before concatenating.
 
@@ -249,12 +269,8 @@ def preprocess_orca(mm_files, ds, **kwargs):
 
     """
     # make sure input ds is chunked
-    input_ds_chunks = {}
-    input_ds_chunks.update(kwargs.get("input_ds_chunks", {}))
-    input_ds_chunks = {k: v
-                       for k, v in input_ds_chunks.items()
-                       if k in ds.dims}
-
+    input_ds_chunks = get_all_compatible_chunk_sizes(
+        kwargs.get("input_ds_chunks", {}))
     ds = ds.chunk(input_ds_chunks)
 
     # construct minimal grid-aware data set from mesh-mask files
