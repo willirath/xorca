@@ -320,6 +320,12 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
     aux_files : Path | sequence | string
         Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
         single file name, a sequence of Paths or file names, a glob statement.
+    input_ds_chunks : dict
+        Chunks for the ds to be preprocessed.  Pass chunking for any input
+        dimension that might be in the input data.
+    targetds_chunks : dict
+        Chunks for the final data set.  Pass chunking for any of the likely
+        output dims: `("t", "z_c", "z_l", "y_c", "y_r", "x_c", "x_r")`
 
     Returns
     -------
@@ -332,6 +338,8 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
         "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
         "y": 200, "x": 200
     }
+    input_ds_chunks = kwargs.get("input_ds_chunks",
+                                 default_input_ds_chunks)
 
     default_target_ds_chunks = {
         "t": 1,
@@ -339,20 +347,22 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
         "y_c": 200, "y_r": 200,
         "x_c": 200, "x_r": 200
     }
+    target_ds_chunks = kwargs.get("target_ds_chunks",
+                                  default_target_ds_chunks)
 
     # First, read aux files to learn about all dimensions.  Then, open again
     # and specify chunking for all applicable dims.  It is very important to
     # already pass the `chunks` arg to `open_[mf]dataset`, to ensure
     # distributed performance.
     with xr.open_mfdataset(aux_files) as _aux_ds:
-        aux_ds_chunks = get_all_compatible_chunk_sizes(default_input_ds_chunks,
-                                                       _aux_ds)
+        aux_ds_chunks = get_all_compatible_chunk_sizes(
+            input_ds_chunks, _aux_ds)
     aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks)
 
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
-            default_input_ds_chunks, xr.open_dataset(df)),
+            input_ds_chunks, xr.open_dataset(df)),
         data_files)
     ds_xorca = xr.merge(
         map(
@@ -362,7 +372,8 @@ def load_xorca_dataset(data_files=None, aux_files=None, **kwargs):
                     data_files, _data_files_chunks),
                 [aux_ds, ])))
 
+    # Chunk the final ds
     ds_xorca = ds_xorca.chunk(
-        get_all_compatible_chunk_sizes(default_target_ds_chunks, ds_xorca))
+        get_all_compatible_chunk_sizes(target_ds_chunks, ds_xorca))
 
     return ds_xorca
