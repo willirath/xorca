@@ -62,16 +62,16 @@ def trim_and_squeeze(ds,
     return ds
 
 
-def create_minimal_coords_ds(ds_mm, **kwargs):
+def create_minimal_coords_ds(mesh_mask, **kwargs):
     """Create a minimal set of coordinates from a mesh-mask dataset.
 
     This creates `"central"` and `"right"` grid points for the horizontal grid
     and `"central"` and `"left"` grid points in the vertical.
 
     """
-    N_z = len(ds_mm.coords["z"])
-    N_y = len(ds_mm.coords["y"])
-    N_x = len(ds_mm.coords["x"])
+    N_z = len(mesh_mask.coords["z"])
+    N_y = len(mesh_mask.coords["y"])
+    N_x = len(mesh_mask.coords["x"])
 
     coords = {
         "z_c": (["z_c", ], np.arange(1, N_z + 1),
@@ -211,15 +211,15 @@ def force_sign_of_coordinate(ds, **kwargs):
     return ds
 
 
-def open_mf_or_dataset(mm_files, **kwargs):
-    """Open mm_files as either a multi-file or a single file xarray Dataset."""
+def open_mf_or_dataset(data_files, **kwargs):
+    """Open data_files as multi-file or a single-file xarray Dataset."""
 
     try:
-        ds_mm = xr.open_mfdataset(mm_files)
+        mesh_mask = xr.open_mfdataset(data_files)
     except TypeError as e:
-        ds_mm = xr.open_dataset(mm_files, chunks={})
+        mesh_mask = xr.open_dataset(data_files, chunks={})
 
-    return ds_mm
+    return mesh_mask
 
 
 def get_all_compatible_chunk_sizes(chunks, dobj):
@@ -242,7 +242,7 @@ def get_all_compatible_chunk_sizes(chunks, dobj):
     return {k: v for k, v in chunks.items() if k in dobj.dims}
 
 
-def preprocess_orca(mm_files, ds, **kwargs):
+def preprocess_orca(mesh_mask, ds, **kwargs):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -250,14 +250,15 @@ def preprocess_orca(mm_files, ds, **kwargs):
     ds = xr.open_mfdataset(
         data_files,
         preprocess=(lambda ds:
-                    preprocess_orca(mesh_mask_files, ds)))
+                    preprocess_orca(mesh_mask, ds)))
     ```
 
     Parameters
     ----------
-    mm_files : Path | sequence | string
-        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
-        single file name, a sequence of Paths or file names, a glob statement.
+    mesh_mask : Dataset | Path | sequence | string
+        An xarray `Dataset` or anything accepted by `xr.open_mfdataset` or,
+        `xr.open_dataset`: A single file name, a sequence of Paths or file
+        names, a glob statement.
     ds : xarray dataset
         Xarray dataset to be processed before concatenating.
     input_ds_chunks : dict
@@ -270,20 +271,21 @@ def preprocess_orca(mm_files, ds, **kwargs):
     """
     # make sure input ds is chunked
     input_ds_chunks = get_all_compatible_chunk_sizes(
-        kwargs.get("input_ds_chunks", {}))
+        kwargs.get("input_ds_chunks", {}), ds)
     ds = ds.chunk(input_ds_chunks)
 
-    # construct minimal grid-aware data set from mesh-mask files
-    ds_mm = open_mf_or_dataset(mm_files, **kwargs)
-    ds_mm = trim_and_squeeze(ds_mm, **kwargs)
-    return_ds = create_minimal_coords_ds(ds_mm, **kwargs)
+    # construct minimal grid-aware data set from mesh-mask info
+    if not isinstance(mesh_mask, xr.Dataset):
+        mesh_mask = open_mf_or_dataset(mesh_mask, **kwargs)
+    mesh_mask = trim_and_squeeze(mesh_mask, **kwargs)
+    return_ds = create_minimal_coords_ds(mesh_mask, **kwargs)
 
     # make sure dims are called correctly and trim input ds
     ds = rename_dims(ds, **kwargs)
     ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
-    return_ds = copy_coords(return_ds, ds_mm, **kwargs)
+    return_ds = copy_coords(return_ds, mesh_mask, **kwargs)
     return_ds = copy_coords(return_ds, ds, **kwargs)
 
     # copy variables from the data set
