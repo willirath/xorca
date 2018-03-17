@@ -7,8 +7,8 @@ import pytest
 import xarray as xr
 
 from xorca.lib import (copy_coords, copy_vars, create_minimal_coords_ds,
-                       force_sign_of_coordinate, open_mf_or_dataset,
-                       preprocess_orca, trim_and_squeeze)
+                       force_sign_of_coordinate, load_xorca_dataset,
+                       open_mf_or_dataset, preprocess_orca, trim_and_squeeze)
 
 
 # Seed the RNG
@@ -256,6 +256,7 @@ def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
     assert all(c in re_read_mm.coords for c in mock_up_mm.coords)
 
 
+@pytest.mark.parametrize('use_dataset', [False, True])
 @pytest.mark.parametrize('set_mm_coords', [False, True])
 @pytest.mark.parametrize('variables',
                          [_mm_vars_nn_msh_3,
@@ -266,18 +267,47 @@ def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords):
+def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords, use_dataset):
+    mock_up_mm = _get_nan_filled_data_set(dims, variables)
+    if set_mm_coords:
+        mock_up_mm = mock_up_mm.set_coords(
+            [v for v in mock_up_mm.data_vars.keys()])
+
+    # To make sure we can handle data sets and files passed to the `mesh_mask`
+    # argument of `process_orca`, either process with the mockup ds right away
+    # or write to a file and pass the file name.
+    if use_dataset:
+        return_ds = preprocess_orca(mock_up_mm, mock_up_mm)
+    else:
+        file_name = str(tmpdir.join("mesh_mask.nc"))
+        mock_up_mm.to_netcdf(file_name)
+        return_ds = preprocess_orca(file_name, mock_up_mm)
+
+    # make sure data are dask arrays
+    assert isinstance(return_ds["e3t"].data, dask_array)
+
+
+@pytest.mark.parametrize('set_mm_coords', [False, True])
+@pytest.mark.parametrize('variables',
+                         [_mm_vars_nn_msh_3,
+                          _mm_vars_old,
+                          _mm_vars_nn_msh_3_added_misshaped_vars])
+@pytest.mark.parametrize(
+    'dims', [
+        {"t": 1, "z": 46, "y": 100, "x": 100},
+        {"t": 1, "z": 46, "y": 222, "x": 222},
+    ])
+def test_load_xorca_dataset(tmpdir, variables, dims, set_mm_coords):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(
             [v for v in mock_up_mm.data_vars.keys()])
 
     file_name = str(tmpdir.join("mesh_mask.nc"))
-
     mock_up_mm.to_netcdf(file_name)
 
-    # TODO: Check that the returned dataset is actually looking good
-    return_ds = preprocess_orca(file_name, mock_up_mm)
+    return_ds = load_xorca_dataset(
+        data_files=[file_name, ], aux_files=[file_name, ])
 
     # make sure data are dask arrays
     assert isinstance(return_ds["e3t"].data, dask_array)

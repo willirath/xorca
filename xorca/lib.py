@@ -1,5 +1,6 @@
 """Library for the conversion from NEMO output to XGCM data sets."""
 
+from itertools import chain
 import numpy as np
 import xarray as xr
 
@@ -62,16 +63,16 @@ def trim_and_squeeze(ds,
     return ds
 
 
-def create_minimal_coords_ds(ds_mm, **kwargs):
+def create_minimal_coords_ds(mesh_mask, **kwargs):
     """Create a minimal set of coordinates from a mesh-mask dataset.
 
     This creates `"central"` and `"right"` grid points for the horizontal grid
     and `"central"` and `"left"` grid points in the vertical.
 
     """
-    N_z = len(ds_mm.coords["z"])
-    N_y = len(ds_mm.coords["y"])
-    N_x = len(ds_mm.coords["x"])
+    N_z = len(mesh_mask.coords["z"])
+    N_y = len(mesh_mask.coords["y"])
+    N_x = len(mesh_mask.coords["x"])
 
     coords = {
         "z_c": (["z_c", ], np.arange(1, N_z + 1),
@@ -211,18 +212,45 @@ def force_sign_of_coordinate(ds, **kwargs):
     return ds
 
 
-def open_mf_or_dataset(mm_files, **kwargs):
-    """Open mm_files as either a multi-file or a single file xarray Dataset."""
+def open_mf_or_dataset(data_files, **kwargs):
+    """Open data_files as multi-file or a single-file xarray Dataset."""
 
     try:
-        ds_mm = xr.open_mfdataset(mm_files)
+        mesh_mask = xr.open_mfdataset(data_files, chunks={})
     except TypeError as e:
-        ds_mm = xr.open_dataset(mm_files, chunks={})
+        mesh_mask = xr.open_dataset(data_files, chunks={})
 
-    return ds_mm
+    return mesh_mask
 
 
-def preprocess_orca(mm_files, ds, **kwargs):
+def get_all_compatible_chunk_sizes(chunks, dobj):
+    """Return only thos chunks that are compatible with the given data.
+
+    Parameters
+    ----------
+    chunks : dict
+        Dictionary with all possible chunk sizes.  (Keys are dimension names,
+        values are integers for the corresponding chunk size.)
+    dobj : dataset or data array
+        Dimensions of dobj will be used to filter the `chunks` dict.
+
+    Returns
+    -------
+    dict
+        Dictionary with only those items of `chunks` that can be applied to
+        `dobj`.
+    """
+    return {k: v for k, v in chunks.items() if k in dobj.dims}
+
+
+def set_time_independent_vars_to_coords(ds):
+    """Make sure all time-independent variables are coordinates."""
+    return ds.set_coords([v for v in ds.data_vars.keys()
+                          if 't' not in ds[v].dims],
+                         inplace=False)
+
+
+def preprocess_orca(mesh_mask, ds, **kwargs):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -230,18 +258,20 @@ def preprocess_orca(mm_files, ds, **kwargs):
     ds = xr.open_mfdataset(
         data_files,
         preprocess=(lambda ds:
-                    preprocess_orca(mesh_mask_files, ds)))
+                    preprocess_orca(mesh_mask, ds)))
     ```
 
     Parameters
     ----------
-    mm_files : Path | sequence | string
-        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
-        single file name, a sequence of Paths or file names, a glob statement.
+    mesh_mask : Dataset | Path | sequence | string
+        An xarray `Dataset` or anything accepted by `xr.open_mfdataset` or,
+        `xr.open_dataset`: A single file name, a sequence of Paths or file
+        names, a glob statement.
     ds : xarray dataset
         Xarray dataset to be processed before concatenating.
     input_ds_chunks : dict
-        Chunks for the ds to be preprocessed.
+        Chunks for the ds to be preprocessed.  Pass chunking for any input
+        dimension that might be in the input data.
 
     Returns
     -------
@@ -249,31 +279,106 @@ def preprocess_orca(mm_files, ds, **kwargs):
 
     """
     # make sure input ds is chunked
-    input_ds_chunks = {}
-    input_ds_chunks.update(kwargs.get("input_ds_chunks", {}))
-    input_ds_chunks = {k: v
-                       for k, v in input_ds_chunks.items()
-                       if k in ds.dims}
-
+    input_ds_chunks = get_all_compatible_chunk_sizes(
+        kwargs.get("input_ds_chunks", {}), ds)
     ds = ds.chunk(input_ds_chunks)
 
-    # construct minimal grid-aware data set from mesh-mask files
-    ds_mm = open_mf_or_dataset(mm_files, **kwargs)
-    ds_mm = trim_and_squeeze(ds_mm, **kwargs)
-    return_ds = create_minimal_coords_ds(ds_mm, **kwargs)
+    # construct minimal grid-aware data set from mesh-mask info
+    if not isinstance(mesh_mask, xr.Dataset):
+        mesh_mask = open_mf_or_dataset(mesh_mask, **kwargs)
+    mesh_mask = trim_and_squeeze(mesh_mask, **kwargs)
+    return_ds = create_minimal_coords_ds(mesh_mask, **kwargs)
 
     # make sure dims are called correctly and trim input ds
     ds = rename_dims(ds, **kwargs)
     ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
-    return_ds = copy_coords(return_ds, ds_mm, **kwargs)
+    return_ds = copy_coords(return_ds, mesh_mask, **kwargs)
     return_ds = copy_coords(return_ds, ds, **kwargs)
 
     # copy variables from the data set
     return_ds = copy_vars(return_ds, ds, **kwargs)
 
-    # Finally, make sure depth is positive upward
+    # make sure depth is positive upward
     return_ds = force_sign_of_coordinate(return_ds, **kwargs)
 
+    # make everything that does not depend on time a coord
+    return_ds = set_time_independent_vars_to_coords(return_ds)
+
     return return_ds
+
+
+def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
+                       **kwargs):
+    """Create a grid-aware NEMO dataset.
+
+    Parameters
+    ----------
+    data_files : Path | sequence | string
+        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
+        single file name, a sequence of Paths or file names, a glob statement.
+    aux_files : Path | sequence | string
+        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
+        single file name, a sequence of Paths or file names, a glob statement.
+    input_ds_chunks : dict
+        Chunks for the ds to be preprocessed.  Pass chunking for any input
+        dimension that might be in the input data.
+    target_ds_chunks : dict
+        Chunks for the final data set.  Pass chunking for any of the likely
+        output dims: `("t", "z_c", "z_l", "y_c", "y_r", "x_c", "x_r")`
+    decode_cf : bool
+        Do we want the CF decoding to be done already?  Default is True.
+
+    Returns
+    -------
+    dataset
+
+    """
+
+    default_input_ds_chunks = {
+        "time_counter": 1, "t": 1,
+        "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
+        "y": 200, "x": 200
+    }
+    input_ds_chunks = kwargs.get("input_ds_chunks",
+                                 default_input_ds_chunks)
+
+    default_target_ds_chunks = {
+        "t": 1,
+        "z_c": 2, "z_l": 2,
+        "y_c": 200, "y_r": 200,
+        "x_c": 200, "x_r": 200
+    }
+    target_ds_chunks = kwargs.get("target_ds_chunks",
+                                  default_target_ds_chunks)
+
+    # First, read aux files to learn about all dimensions.  Then, open again
+    # and specify chunking for all applicable dims.  It is very important to
+    # already pass the `chunks` arg to `open_[mf]dataset`, to ensure
+    # distributed performance.
+    with xr.open_mfdataset(aux_files, decode_cf=decode_cf) as _aux_ds:
+        aux_ds_chunks = get_all_compatible_chunk_sizes(
+            input_ds_chunks, _aux_ds)
+    aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks,
+                               decode_cf=decode_cf)
+
+    # Again, we first have to open all data sets to filter the input chunks.
+    _data_files_chunks = map(
+        lambda df: get_all_compatible_chunk_sizes(
+            input_ds_chunks, xr.open_dataset(df, decode_cf=decode_cf)),
+        data_files)
+    ds_xorca = xr.merge(
+        map(
+            lambda ds: preprocess_orca(aux_ds, ds),
+            chain(
+                map(lambda df, chunks: xr.open_dataset(df, chunks=chunks,
+                                                       decode_cf=decode_cf),
+                    data_files, _data_files_chunks),
+                [aux_ds, ])))
+
+    # Chunk the final ds
+    ds_xorca = ds_xorca.chunk(
+        get_all_compatible_chunk_sizes(target_ds_chunks, ds_xorca))
+
+    return ds_xorca
