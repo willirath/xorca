@@ -23,10 +23,10 @@ After a short preamble which imports the package and loads the data:
 ```python
 import xarray as xr
 import xgcm
-from xorca.lib import preprocess_orca
+from xorca.lib import load_xorca_dataset
 
-original_ds = xr.open_mfdataset(list_of_all_model_output_files)
-ds = preprocess_orca(path_to_mesh_mask_file, original_ds)
+ds = load_xorca_dataset(data_files=list_of_all_model_output_files,
+                        aux_files=list_of_mesh_mask_files
 grid = xgcm.Grid(ds, periodic=["Y", "X"])
 ```
 
