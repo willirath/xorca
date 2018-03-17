@@ -9,3 +9,4 @@ tmp_*.nc
 notebooks/*.nc
 *.egg-info/
 .cache/
+.coverage
