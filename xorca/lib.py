@@ -1,6 +1,5 @@
 """Library for the conversion from NEMO output to XGCM data sets."""
 
-from itertools import chain
 import numpy as np
 import xarray as xr
 
