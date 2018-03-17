@@ -1,3 +1,0 @@
-[submodule "example-data"]
-	path = example-data
-	url = git@git.geomar.de:willi-rath/xorca-example-data.git
