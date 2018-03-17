@@ -368,14 +368,17 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
         lambda df: get_all_compatible_chunk_sizes(
             input_ds_chunks, xr.open_dataset(df, decode_cf=decode_cf)),
         data_files)
-    ds_xorca = xr.merge(
+
+    # Automatically combine all data files
+    ds_xorca = xr.auto_combine(
         map(
             lambda ds: preprocess_orca(aux_ds, ds),
-            chain(
-                map(lambda df, chunks: xr.open_dataset(df, chunks=chunks,
-                                                       decode_cf=decode_cf),
-                    data_files, _data_files_chunks),
-                [aux_ds, ])))
+            map(lambda df, chunks: xr.open_dataset(df, chunks=chunks,
+                                                   decode_cf=decode_cf),
+                data_files, _data_files_chunks)))
+
+    # Add info from aux files
+    ds_xorca.update(preprocess_orca(aux_ds, aux_ds))
 
     # Chunk the final ds
     ds_xorca = ds_xorca.chunk(
