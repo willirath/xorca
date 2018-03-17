@@ -324,7 +324,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     input_ds_chunks : dict
         Chunks for the ds to be preprocessed.  Pass chunking for any input
         dimension that might be in the input data.
-    targetds_chunks : dict
+    target_ds_chunks : dict
         Chunks for the final data set.  Pass chunking for any of the likely
         output dims: `("t", "z_c", "z_l", "y_c", "y_r", "x_c", "x_r")`
     decode_cf : bool
