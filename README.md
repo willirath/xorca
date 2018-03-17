@@ -1,7 +1,12 @@
 # XORCA
 
+master
 [![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/master/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
 [![coverage report](https://git.geomar.de/willi-rath/xorca/badges/master/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
+|
+develop
+[![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/develop/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
+[![coverage report](https://git.geomar.de/willi-rath/xorca/badges/develop/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
 
 
 ## What is this about?
