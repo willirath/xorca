@@ -356,11 +356,15 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     # and specify chunking for all applicable dims.  It is very important to
     # already pass the `chunks` arg to `open_[mf]dataset`, to ensure
     # distributed performance.
-    with xr.open_mfdataset(aux_files, decode_cf=decode_cf) as _aux_ds:
-        aux_ds_chunks = get_all_compatible_chunk_sizes(
-            input_ds_chunks, _aux_ds)
-    aux_ds = xr.open_mfdataset(aux_files, chunks=aux_ds_chunks,
-                               decode_cf=decode_cf)
+    _aux_files_chunks = map(
+        lambda af: get_all_compatible_chunk_sizes(
+            input_ds_chunks, xr.open_dataset(af, decode_cf=False)),
+        aux_files)
+    aux_ds = xr.Dataset()
+    for af, ac in zip(aux_files, _aux_files_chunks):
+        aux_ds.update(
+            rename_dims(xr.open_dataset(af, decode_cf=False,
+                                        chunks=ac)).squeeze())
 
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
@@ -372,8 +376,8 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     ds_xorca = xr.auto_combine(
         map(
             lambda ds: preprocess_orca(aux_ds, ds),
-            map(lambda df, chunks: xr.open_dataset(df, chunks=chunks,
-                                                   decode_cf=decode_cf),
+            map(lambda df, chunks: rename_dims(
+                xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf)),
                 data_files, _data_files_chunks)))
 
     # Add info from aux files
