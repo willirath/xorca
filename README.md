@@ -17,8 +17,8 @@ this to NEMO output.  But [xnemo was already
 taken](https://github.com/serazing/xnemo).)
 
 It allows for opening all output files from a model run into one Xarray dataset
-that is understood by XGCM.  With this, grid-aware differentiation and
-integration / summation is possible.
+that is understood by XGCM.  With this, grid-aware differentiation /
+differencing and integration / summation is possible.
 
 
 ### Example: Calculate the barotropic stream function in 2 lines
@@ -48,6 +48,7 @@ psi.mean("t").plot(size=9);
 ```
 
 ![barotropic stream function](doc/images/barotropic_stream_function.png)
+
 
 ### More examples
 
