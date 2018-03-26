@@ -9,3 +9,6 @@ tmp_*.nc
 notebooks/*.nc
 *.egg-info/
 .cache/
+.coverage
+_example_data
+.pytest_cache
