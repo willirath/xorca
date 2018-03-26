@@ -345,7 +345,9 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
         "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
         "y": 200, "x": 200
     }
-    input_ds_chunks = kwargs.get("input_ds_chunks",
+    # get and remove (pop) the input_ds_chunks from kwargs
+    # to make sure that chunking is not applied again during preprocess_orca
+    input_ds_chunks = kwargs.pop("input_ds_chunks",
                                  default_input_ds_chunks)
 
     default_target_ds_chunks = {
@@ -381,14 +383,15 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     ds_xorca = xr.auto_combine(
         sorted(
             map(
-                lambda ds: preprocess_orca(aux_ds, ds),
+                lambda ds: preprocess_orca(aux_ds, ds, **kwargs),
                 map(lambda df, chunks: rename_dims(
-                    xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf)),
+                    xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf),
+                    **kwargs),
                     data_files, _data_files_chunks)),
             key=_get_first_time_step_if_any))
 
     # Add info from aux files
-    ds_xorca.update(preprocess_orca(aux_ds, aux_ds))
+    ds_xorca.update(preprocess_orca(aux_ds, aux_ds, **kwargs))
 
     # Chunk the final ds
     ds_xorca = ds_xorca.chunk(
