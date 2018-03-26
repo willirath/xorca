@@ -308,6 +308,11 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     return return_ds
 
 
+def _get_first_time_step_if_any(dobj):
+    if "t" in dobj.coords:
+        return dobj.coords["t"].data[0]
+
+
 def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
                        **kwargs):
     """Create a grid-aware NEMO dataset.
@@ -374,11 +379,13 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
 
     # Automatically combine all data files
     ds_xorca = xr.auto_combine(
-        map(
-            lambda ds: preprocess_orca(aux_ds, ds),
-            map(lambda df, chunks: rename_dims(
-                xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf)),
-                data_files, _data_files_chunks)))
+        sorted(
+            map(
+                lambda ds: preprocess_orca(aux_ds, ds),
+                map(lambda df, chunks: rename_dims(
+                    xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf)),
+                    data_files, _data_files_chunks)),
+            key=_get_first_time_step_if_any))
 
     # Add info from aux files
     ds_xorca.update(preprocess_orca(aux_ds, aux_ds))
