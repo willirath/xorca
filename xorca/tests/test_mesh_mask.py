@@ -141,6 +141,13 @@ def _get_nan_filled_data_set(dims, variables):
     return xr.Dataset(coords=coords, data_vars=data_vars)
 
 
+@pytest.fixture(scope="function")
+def temp_dir(tmpdir_factory):
+    temp_dir = tmpdir_factory.mktemp('data')
+    yield temp_dir
+    temp_dir.remove()
+
+
 @pytest.mark.parametrize('set_mm_coords', [False, True])
 @pytest.mark.parametrize('variables',
                          [_mm_vars_nn_msh_3,
@@ -232,14 +239,14 @@ def test_force_sign(depth_c, depth_l):
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
+def test_reading_mm_file(temp_dir, variables, dims, set_mm_coords,
                          use_sequence, use_pathlib):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(
             [v for v in mock_up_mm.data_vars.keys()])
 
-    file_name = str(tmpdir.join("mesh_mask.nc"))
+    file_name = str(temp_dir.join("mesh_mask.nc"))
 
     mock_up_mm.to_netcdf(file_name)
 
@@ -267,7 +274,8 @@ def test_reading_mm_file(tmpdir, variables, dims, set_mm_coords,
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords, use_dataset):
+def test_preprocess_orca(temp_dir, variables, dims, set_mm_coords,
+                         use_dataset):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(
@@ -279,7 +287,7 @@ def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords, use_dataset):
     if use_dataset:
         return_ds = preprocess_orca(mock_up_mm, mock_up_mm)
     else:
-        file_name = str(tmpdir.join("mesh_mask.nc"))
+        file_name = str(temp_dir.join("mesh_mask.nc"))
         mock_up_mm.to_netcdf(file_name)
         return_ds = preprocess_orca(file_name, mock_up_mm)
 
@@ -297,13 +305,13 @@ def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords, use_dataset):
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_load_xorca_dataset(tmpdir, variables, dims, set_mm_coords):
+def test_load_xorca_dataset(temp_dir, variables, dims, set_mm_coords):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(
             [v for v in mock_up_mm.data_vars.keys()])
 
-    file_name = str(tmpdir.join("mesh_mask.nc"))
+    file_name = str(temp_dir.join("mesh_mask.nc"))
     mock_up_mm.to_netcdf(file_name)
 
     return_ds = load_xorca_dataset(
