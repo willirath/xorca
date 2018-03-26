@@ -297,7 +297,9 @@ def test_preprocess_orca(tmpdir, variables, dims, set_mm_coords, use_dataset):
         {"t": 1, "z": 46, "y": 100, "x": 100},
         {"t": 1, "z": 46, "y": 222, "x": 222},
     ])
-def test_load_xorca_dataset(tmpdir, variables, dims, set_mm_coords):
+@pytest.mark.parametrize("update_var_dict", [False, True])
+def test_load_xorca_dataset(tmpdir, variables, dims, set_mm_coords,
+                            update_var_dict):
     mock_up_mm = _get_nan_filled_data_set(dims, variables)
     if set_mm_coords:
         mock_up_mm = mock_up_mm.set_coords(
@@ -306,8 +308,18 @@ def test_load_xorca_dataset(tmpdir, variables, dims, set_mm_coords):
     file_name = str(tmpdir.join("mesh_mask.nc"))
     mock_up_mm.to_netcdf(file_name)
 
+    if update_var_dict:
+        update_orca_variables = {"e_3_t": {"dims": ["z_c", "y_c", "x_c"],
+                                           "old_names": ["e3t", "e3t_0"]}}
+    else:
+        update_orca_variables = {}
+
     return_ds = load_xorca_dataset(
-        data_files=[file_name, ], aux_files=[file_name, ])
+        data_files=[file_name, ], aux_files=[file_name, ],
+        update_orca_variables=update_orca_variables)
 
     # make sure data are dask arrays
     assert isinstance(return_ds["e3t"].data, dask_array)
+
+    if update_var_dict:
+        assert "e_3_t" in return_ds
