@@ -10,3 +10,4 @@ notebooks/*.nc
 *.egg-info/
 .cache/
 .coverage
+_example_data
