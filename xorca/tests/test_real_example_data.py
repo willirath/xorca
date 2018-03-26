@@ -1,14 +1,9 @@
 """Test reading the mesh masks."""
 
-from dask.array.core import Array as dask_array
-import numpy as np
 from pathlib import Path
 import pytest
-import xarray as xr
 
-from xorca.lib import (copy_coords, copy_vars, create_minimal_coords_ds,
-                       force_sign_of_coordinate, load_xorca_dataset,
-                       open_mf_or_dataset, preprocess_orca, trim_and_squeeze)
+from xorca.lib import load_xorca_dataset
 
 
 example_data_locations = {
