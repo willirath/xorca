@@ -53,7 +53,7 @@ psi.mean("t").plot(size=9);
 ### More examples
 
 See the example notebook for hints on where this might end:
-[notebooks/calculate_psi_speed_and_amoc.ipynb](notebooks/calculate_psi_speed_and_amoc.ipynb).
+[notebooks/xorca_demo_ORCA05.ipynb](notebooks/xorca_demo_ORCA05.ipynb).
 
 
 ## Installation
