@@ -11,3 +11,4 @@ notebooks/*.nc
 .cache/
 .coverage
 _example_data
+.pytest_cache
