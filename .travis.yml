@@ -22,3 +22,6 @@ install:
 script:
     - pytest -v --cov=xorca --cov-report="term-missing" xorca/tests/
     - flake8 xorca/
+
+after_success:
+    - codecov
