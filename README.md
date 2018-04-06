@@ -1,14 +1,5 @@
 # XORCA
 
-master
-[![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/master/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
-[![coverage report](https://git.geomar.de/willi-rath/xorca/badges/master/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
-|
-develop
-[![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/develop/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
-[![coverage report](https://git.geomar.de/willi-rath/xorca/badges/develop/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
-
-
 ## What is this about?
 
 XORCA brings [XGCM](https://xgcm.readthedocs.io) and
@@ -62,7 +53,7 @@ First, install all dependencies (assuming you have conda installed and in the
 path):
 ```bash
 curl \
-    https://git.geomar.de/willi-rath/xorca/raw/master/environment.yml \
+    https://raw.githubusercontent.com/willirath/xorca/master/environment.yml \
     -o xorca_environment.yml
 conda env create -n xorca_env -f xorca_environment.yml
 ```
@@ -70,7 +61,7 @@ conda env create -n xorca_env -f xorca_environment.yml
 Then install XORCA:
 ```bash
 source activate xorca_env
-pip install git+https://git.geomar.de/willi-rath/xorca.git@master
+pip install git+https://github.com/willirath/xorca.git@master
 ```
 
 To use, `source activate xorca_env` before, e.g., starting `jupyter notebook`.
