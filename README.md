@@ -31,7 +31,7 @@ import xgcm
 from xorca.lib import load_xorca_dataset
 
 ds = load_xorca_dataset(data_files=list_of_all_model_output_files,
-                        aux_files=list_of_mesh_mask_files
+                        aux_files=list_of_mesh_mask_files)
 grid = xgcm.Grid(ds, periodic=["Y", "X"])
 ```
 
