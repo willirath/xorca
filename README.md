@@ -1,6 +1,7 @@
 # XORCA
 
-[![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=master)](https://travis-ci.org/willirath/xorca)
+master: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=master)](https://travis-ci.org/willirath/xorca)
+develop: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=develop)](https://travis-ci.org/willirath/xorca)
 
 ## What is this about?
 
