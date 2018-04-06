@@ -17,4 +17,5 @@ dependencies:
   - seawater
   - xarray
   - pip:
+      - codecov
       - git+https://github.com/xgcm/xgcm.git@bf4a2239d64dfd1c0d5b1af03e7394488433c11a
