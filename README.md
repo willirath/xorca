@@ -1,5 +1,7 @@
 # XORCA
 
+[![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=master)](https://travis-ci.org/willirath/xorca)
+
 ## What is this about?
 
 XORCA brings [XGCM](https://xgcm.readthedocs.io) and
