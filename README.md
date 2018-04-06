@@ -1,13 +1,7 @@
 # XORCA
 
-master
-[![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/master/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
-[![coverage report](https://git.geomar.de/willi-rath/xorca/badges/master/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/master)
-|
-develop
-[![pipeline status](https://git.geomar.de/willi-rath/xorca/badges/develop/pipeline.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
-[![coverage report](https://git.geomar.de/willi-rath/xorca/badges/develop/coverage.svg)](https://git.geomar.de/willi-rath/xorca/commits/develop)
-
+master: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=master)](https://travis-ci.org/willirath/xorca)
+develop: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=develop)](https://travis-ci.org/willirath/xorca)
 
 ## What is this about?
 
@@ -31,7 +25,7 @@ import xgcm
 from xorca.lib import load_xorca_dataset
 
 ds = load_xorca_dataset(data_files=list_of_all_model_output_files,
-                        aux_files=list_of_mesh_mask_files
+                        aux_files=list_of_mesh_mask_files)
 grid = xgcm.Grid(ds, periodic=["Y", "X"])
 ```
 
@@ -62,7 +56,7 @@ First, install all dependencies (assuming you have conda installed and in the
 path):
 ```bash
 curl \
-    https://git.geomar.de/willi-rath/xorca/raw/master/environment.yml \
+    https://raw.githubusercontent.com/willirath/xorca/master/environment.yml \
     -o xorca_environment.yml
 conda env create -n xorca_env -f xorca_environment.yml
 ```
@@ -70,7 +64,7 @@ conda env create -n xorca_env -f xorca_environment.yml
 Then install XORCA:
 ```bash
 source activate xorca_env
-pip install git+https://git.geomar.de/willi-rath/xorca.git@master
+pip install git+https://github.com/willirath/xorca.git@master
 ```
 
 To use, `source activate xorca_env` before, e.g., starting `jupyter notebook`.
