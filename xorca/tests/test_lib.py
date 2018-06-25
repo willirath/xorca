@@ -1,7 +1,5 @@
 """Test the pre-processing lib."""
 
-import sys
-sys.path.append("/home/jrieck/src/xorca")
 from itertools import product
 import numpy as np
 import pytest
