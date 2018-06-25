@@ -59,14 +59,8 @@ def trim_and_squeeze(ds,
     if (x_slice is not None) and ("x" in ds.dims):
         ds = ds.isel(x=slice(*x_slice))
     
-    to_squeeze = []
-    for dimensions in ds.dims:
-        if ds[dimensions].size == 1:
-            to_squeeze.append(dimensions)
-    
-    if "t" in to_squeeze:    
-        t_index = to_squeeze.index("t")
-        del to_squeeze[t_index]
+    to_squeeze = [dim for dim in ds.dims 
+                  if ((ds[dim].size == 1) and (dim is not "t"))]
         
     ds = ds.squeeze(dim = to_squeeze)
     return ds
