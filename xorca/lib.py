@@ -60,7 +60,9 @@ def trim_and_squeeze(ds,
         ds = ds.isel(x=slice(*x_slice))
     
     to_squeeze = [dim for dim in ds.dims 
-                  if ((ds[dim].size == 1) and (dim is not "t"))]
+                  if ((ds[dim].size == 1) and ((dim is not "t")
+                      or (np.invert(np.issubdtype(ds[dim].dtype, 
+                                                  np.datetime64)))))]
         
     ds = ds.squeeze(dim = to_squeeze)
     return ds
