@@ -33,7 +33,6 @@ def test_trim_and_sqeeze_by_model_config(model_config_and_trimming):
     ds_trimmed_here = ds.isel(x=slice(*x_slice), y=slice(*y_slice))
 
     assert "degen" not in ds_t.dims
-    assert "t" in ds_t.dims
     assert ds_t.dims["y"] == ds_trimmed_here.dims["y"]
     assert ds_t.dims["x"] == ds_trimmed_here.dims["x"]
 
