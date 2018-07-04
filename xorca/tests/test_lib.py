@@ -22,7 +22,7 @@ def test_trim_and_sqeeze_by_model_config(model_config_and_trimming):
     N = 102
     ds = xr.Dataset(
         coords={"degen": (["degen"], [1]),
-                "t": (["t"], [1]),
+                "t": (["t"], [np.datetime64('1970-01-01')]),
                 "y": (["y", ], range(N)),
                 "x": (["x", ],  range(N))})
 
@@ -33,6 +33,7 @@ def test_trim_and_sqeeze_by_model_config(model_config_and_trimming):
     ds_trimmed_here = ds.isel(x=slice(*x_slice), y=slice(*y_slice))
 
     assert "degen" not in ds_t.dims
+    assert "t" in ds_t.dims
     assert ds_t.dims["y"] == ds_trimmed_here.dims["y"]
     assert ds_t.dims["x"] == ds_trimmed_here.dims["x"]
 
@@ -43,6 +44,7 @@ def test_trim_and_sqeeze_by_yx_slice(y_slice, x_slice):
     N = 102
     ds = xr.Dataset(
         coords={"degen": (["degen"], [1]),
+                "t": (["t"], [np.datetime64('1970-01-01')]),
                 "y": (["y", ], range(N)),
                 "x": (["x", ],  range(N))})
 
@@ -60,6 +62,7 @@ def test_trim_and_sqeeze_by_yx_slice(y_slice, x_slice):
         ds_trimmed_here = ds_trimmed_here.isel(x=slice(*x_slice))
 
     assert "degen" not in ds_t.dims
+    assert "t" in ds_t.dims
     assert ds_t.dims["y"] == ds_trimmed_here.dims["y"]
     assert ds_t.dims["x"] == ds_trimmed_here.dims["x"]
 
