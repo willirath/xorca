@@ -46,6 +46,8 @@ def trim_and_squeeze(ds,
         "GLOBAL": {"y": (1, -1), "x": (1, -1)},
         "NEST": {},
     }
+    
+    z_dims = ['z_c', 'z_l']
 
     yx_slice_dict = how_to_trim.get(
         model_config, {})
@@ -62,7 +64,8 @@ def trim_and_squeeze(ds,
     to_squeeze = [dim for dim in ds.dims
                   if ((ds[dim].size == 1) and ((dim is not "t")
                       or (np.invert(np.issubdtype(ds[dim].dtype,
-                                                  np.datetime64)))))]
+                                                  np.datetime64))))
+                      and (dim not in z_dims))]
 
     ds = ds.squeeze(dim=to_squeeze)
     return ds
