@@ -59,10 +59,21 @@ def trim_and_squeeze(ds,
     if (x_slice is not None) and ("x" in ds.dims):
         ds = ds.isel(x=slice(*x_slice))
 
+    def _is_singleton(ds, dim):
+        return (ds[dim].size == 1)
+
+    def _is_time_dim(ds, dim):
+        return (dim in orca_names.t_dims and
+                np.issubdtype(ds[dim].dtype,
+                              np.datetime64))
+
+    def _is_z_dim(ds, dim):
+        return (dim in orca_names.z_dims)
+
     to_squeeze = [dim for dim in ds.dims
-                  if ((ds[dim].size == 1) and ((dim is not "t")
-                      or (np.invert(np.issubdtype(ds[dim].dtype,
-                                                  np.datetime64)))))]
+                  if (_is_singleton(ds, dim) and
+                      not _is_time_dim(ds, dim) and
+                      not _is_z_dim(ds, dim))]
 
     ds = ds.squeeze(dim=to_squeeze)
     return ds
@@ -377,8 +388,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     for af, ac in zip(aux_files, _aux_files_chunks):
         aux_ds.update(
             rename_dims(xr.open_dataset(af, decode_cf=False,
-                                        chunks=ac)).squeeze())
-
+                                        chunks=ac)))
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(

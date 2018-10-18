@@ -98,3 +98,18 @@ rename_dims = {
     "Y": "y",
     "X": "x"
 }
+
+z_dims = (
+    "z_c",
+    "z_l",
+    "z",
+    "deptht",
+    "depthu",
+    "depthv",
+    "depthw"
+)
+
+t_dims = (
+    "t",
+    "time_counter"
+)
