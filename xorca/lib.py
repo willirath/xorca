@@ -47,8 +47,6 @@ def trim_and_squeeze(ds,
         "NEST": {},
     }
 
-    z_dims = ["z_c", "z_l", "z"]
-
     yx_slice_dict = how_to_trim.get(
         model_config, {})
     if y_slice is None:
@@ -65,7 +63,7 @@ def trim_and_squeeze(ds,
                   if (((ds[dim].size == 1) and ((dim is not "t")
                       or (np.invert(np.issubdtype(ds[dim].dtype,
                                                   np.datetime64)))))
-                      and (dim not in z_dims))]
+                      and (dim not in orca_names.z_dims)]
 
     ds = ds.squeeze(dim=to_squeeze)
     return ds
