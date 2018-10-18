@@ -47,7 +47,7 @@ def trim_and_squeeze(ds,
         "NEST": {},
     }
     
-    z_dims = ['z_c', 'z_l']
+    z_dims = ["z_c", "z_l", "z"]
 
     yx_slice_dict = how_to_trim.get(
         model_config, {})
@@ -64,8 +64,8 @@ def trim_and_squeeze(ds,
     to_squeeze = [dim for dim in ds.dims
                   if ((ds[dim].size == 1) and ((dim is not "t")
                       or (np.invert(np.issubdtype(ds[dim].dtype,
-                                                  np.datetime64))))
-                      and (dim not in z_dims))]
+                                                  np.datetime64)))))
+                      and (dim not in z_dims)]
 
     ds = ds.squeeze(dim=to_squeeze)
     return ds
@@ -380,8 +380,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     for af, ac in zip(aux_files, _aux_files_chunks):
         aux_ds.update(
             rename_dims(xr.open_dataset(af, decode_cf=False,
-                                        chunks=ac)).squeeze())
-
+                                        chunks=ac)))
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
