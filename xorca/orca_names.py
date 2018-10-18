@@ -100,11 +100,11 @@ rename_dims = {
 }
 
 z_dims = (
-    "z_c", 
-    "z_l", 
-    "z", 
-    "deptht", 
-    "depthu", 
-    "depthv", 
+    "z_c",
+    "z_l",
+    "z",
+    "deptht",
+    "depthu",
+    "depthv",
     "depthw"
 )
