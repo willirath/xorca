@@ -63,7 +63,7 @@ def trim_and_squeeze(ds,
         return (ds[dim].size == 1)
 
     def _is_time_dim(ds, dim):
-        return (dim in orca_names.t_dims or
+        return (dim in orca_names.t_dims and
                 np.issubdtype(ds[dim].dtype,
                               np.datetime64))
 
