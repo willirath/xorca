@@ -108,3 +108,8 @@ z_dims = (
     "depthv",
     "depthw"
 )
+
+t_dims = (
+    "t",
+    "time_counter"
+)
