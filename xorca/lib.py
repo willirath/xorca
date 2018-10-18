@@ -59,12 +59,21 @@ def trim_and_squeeze(ds,
     if (x_slice is not None) and ("x" in ds.dims):
         ds = ds.isel(x=slice(*x_slice))
 
+    def _is_singleton(ds, dim):
+        return (ds[dim] == 1)
+
+    def _is_time_dim(ds, dim):
+        return (dim in orca_names.t_dims or
+                np.invert(np.issubdtype(ds[dim].dtype,
+                                        np.datetime64)))
+
+    def _is_z_dim(ds, dim):
+        return (dim in orca_names.z_dims)
+
     to_squeeze = [dim for dim in ds.dims
-                  if ((ds[dim].size == 1)
-                      and ((dim is not "t") or
-                           np.invert(np.issubdtype(ds[dim].dtype,
-                                                   np.datetime64)))
-                      and (dim not in orca_names.z_dims))]
+                  if (not _is_singleton(ds, dim) and
+                      not _is_time_dim(ds, dim) and
+                      not _is_z_dim(ds, dim))]
 
     ds = ds.squeeze(dim=to_squeeze)
     return ds
