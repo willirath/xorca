@@ -75,13 +75,6 @@ def trim_and_squeeze(ds,
                       not _is_time_dim(ds, dim) and
                       not _is_z_dim(ds, dim))]
 
-    to_squeeze = [dim for dim in ds.dims
-                  if ((ds[dim].size == 1)
-                      and ((dim is not "t") or
-                           np.invert(np.issubdtype(ds[dim].dtype,
-                                                   np.datetime64)))
-                      and (dim not in orca_names.z_dims))]
-
     ds = ds.squeeze(dim=to_squeeze)
     return ds
 
