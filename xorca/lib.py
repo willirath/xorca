@@ -71,7 +71,7 @@ def trim_and_squeeze(ds,
         return (dim in orca_names.z_dims)
 
     to_squeeze = [dim for dim in ds.dims
-                  if (is_singleton(ds, dim) and
+                  if (_is_singleton(ds, dim) and
                       not _is_time_dim(ds, dim) and
                       not _is_z_dim(ds, dim))]
 
