@@ -18,6 +18,7 @@ install:
     - conda env create --name py3_xorca --file environment.yml
     - source activate py3_xorca
     - pip install -e .
+    - conda list
 
 script:
     - pytest xorca -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
