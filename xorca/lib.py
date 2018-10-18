@@ -60,7 +60,7 @@ def trim_and_squeeze(ds,
         ds = ds.isel(x=slice(*x_slice))
 
     def _is_singleton(ds, dim):
-        return (ds[dim] == 1)
+        return (ds[dim].size == 1)
 
     def _is_time_dim(ds, dim):
         return (dim in orca_names.t_dims or
