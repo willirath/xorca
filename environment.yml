@@ -2,7 +2,7 @@ name: py3_xorca
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - python
   - cartopy
   - coverage
   - dask
