@@ -13,7 +13,7 @@ dependencies:
   - netCDF4
   - numpy
   - pandas
-  - pytest<3
+  - pytest
   - pytest-cov
   - seawater
   - xarray
