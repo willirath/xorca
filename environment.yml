@@ -5,6 +5,7 @@ dependencies:
   - python=3
   - cartopy
   - coverage
+  - dask
   - flake8
   - git-lfs
   - matplotlib
