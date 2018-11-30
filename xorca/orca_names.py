@@ -62,6 +62,7 @@ orca_variables = {
     "zomsfind": {"dims": ["t", "z_l", "y_r"]},
     "zomsfinp": {"dims": ["t", "z_l", "y_r"]},
     "zomsfpac": {"dims": ["t", "z_l", "y_r"]},
+    "vovecrtz": {"dims": ["t", "z_l", "y_c", "x_c"]},
     "e1t": {"dims": ["y_c", "x_c"]},
     "e2t": {"dims": ["y_c", "x_c"]},
     "e3t": {"dims": ["z_c", "y_c", "x_c"], "old_names": ["e3t", "e3t_0"]},
