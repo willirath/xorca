@@ -21,7 +21,7 @@ install:
 
 script:
     - pytest xorca -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
-    - flake8 xorca/
+    - flake8 --extend-ignore=F841 xorca/
 
 after_success:
     - codecov
