@@ -5,7 +5,6 @@ dependencies:
   - python=3
   - cartopy
   - coverage
-  - dask
   - flake8
   - git-lfs
   - matplotlib
@@ -13,7 +12,7 @@ dependencies:
   - netCDF4
   - numpy
   - pandas
-  - pytest
+  - pytest<4
   - pytest-cov
   - seawater
   - xarray
