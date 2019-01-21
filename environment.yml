@@ -1,22 +1,20 @@
-name: py3_xorca
+name: xorca
 channels:
   - conda-forge
 dependencies:
   - python=3
-  - cartopy
+  - blas
   - coverage
   - dask
   - flake8
   - git-lfs
   - matplotlib
-  - memory_profiler
   - netCDF4
   - numpy
   - pandas
   - pytest
   - pytest-cov
-  - seawater
-  - xarray<0.11
+  - xarray
   - pip:
       - codecov
-      - git+https://github.com/xgcm/xgcm.git@bf4a2239d64dfd1c0d5b1af03e7394488433c11a
+      - git+https://github.com/xgcm/xgcm.git@1361e8df0024d4f3f7f4d984047370469425473b
