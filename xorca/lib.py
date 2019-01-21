@@ -167,14 +167,14 @@ def copy_coords(return_ds, ds_in, **kwargs):
                     return_ds.coords[new_name] = (new_dims,
                                                   ds_in.coords[old_name].data)
                     break
-                except ValueError as e:
+                except ValueError:
                     pass
             if old_name in ds_in:
                 try:
                     return_ds.coords[new_name] = (new_dims,
                                                   ds_in[old_name].data)
                     break
-                except ValueError as e:
+                except ValueError:
                     pass
 
     return return_ds
@@ -195,7 +195,7 @@ def copy_vars(return_ds, raw_ds, **kwargs):
                 try:
                     return_ds[new_name] = (new_dims, raw_ds[old_name].data)
                     break
-                except ValueError as e:
+                except ValueError:
                     pass
     return return_ds
 
@@ -233,7 +233,7 @@ def open_mf_or_dataset(data_files, **kwargs):
 
     try:
         mesh_mask = xr.open_mfdataset(data_files, chunks={})
-    except TypeError as e:
+    except TypeError:
         mesh_mask = xr.open_dataset(data_files, chunks={})
 
     return mesh_mask
