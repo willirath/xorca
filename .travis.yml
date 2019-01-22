@@ -20,7 +20,7 @@ install:
     - pip install -e .
 
 script:
-    - pytest xorca -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
+    - pytest -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
     - flake8 --extend-ignore=F841 xorca/
 
 after_success:
