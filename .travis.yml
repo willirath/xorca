@@ -25,7 +25,7 @@ install:
     - git lfs install
     - du -sh $HOME/xorca_test_data || echo "didn't find test data"
     - git clone https://github.com/willirath/xorca_test_data.git $HOME/xorca_test_data
-    - du -sh $HOME/xorca_test_data || echo "didn't find test data
+    - du -sh $HOME/xorca_test_data || echo "didn't find test data"
 
 script:
     - pytest -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
