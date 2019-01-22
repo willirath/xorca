@@ -6,6 +6,98 @@ import xarray as xr
 from . import orca_names
 
 
+def render_depth_name(grid_dict):
+    """Render name of depth coordinate from grid position."""
+    return "depth_{Z}".format(**grid_dict)
+
+
+def render_lat_name(grid_dict):
+    """Render name of lat coordinate array."""
+    return "lat_{Y}{X}".format(**grid_dict)
+
+
+def render_lon_name(grid_dict):
+    """Render name of lon coordinate array."""
+    return "lon_{Y}{X}".format(**grid_dict)
+
+
+def arrays_are_close(first_array, second_array, **kwargs):
+    """Check if arrays are close.
+
+    Parameters
+    ----------
+    first_array : array
+        To be compared to the `second_array`.
+    second_array : array
+        To be compared to the `first_array`.
+    kwargs
+        Passed to `numpy.allclose()`
+
+    Returns
+    -------
+    True if arrays are close.
+
+    """
+    return np.allclose(first_array, second_array, **kwargs)
+
+
+def detect_horizontal_grid(ds, ds_coords):
+    """Detect horizontal grid.
+
+    Parameters
+    ----------
+    ds : Dataset
+        xarray dataset for which the grid has to be detected.
+    ds_coords : Dataset
+        reference coords.
+
+    Returns
+    -------
+    dict where `"Y"` indicates the `y` position `"X"` indicates the `x`
+    position.
+
+    """
+    possible_grids = [{"Y": yg, "X": xg}
+                      for xg in ["c", "r"] for yg in ["c", "r"]]
+    for pg in possible_grids:
+        if (arrays_are_close(ds_coords[render_lon_name(pg)], ds.nav_lon) and
+                arrays_are_close(ds_coords[render_lat_name(pg)], ds.nav_lat)):
+            return pg
+
+
+def is_depth_coord(coord_name):
+    """Check if the coord_name either starts on 'depth' or is 'z'."""
+    return coord_name.startswith("depth") or (coord_name == "z")
+
+
+def find_depth_coord_name(ds):
+    depth_coords = list(filter(is_depth_coord, ds.coords.keys()))
+    return depth_coords[0]
+
+
+def detect_vertical_grid(ds, ds_coords):
+    """Detect vertical grid.
+
+    Parameters
+    ----------
+    ds : Dataset
+        xarray dataset for which the grid has to be detected.
+    ds_coords : Dataset
+        reference coords.
+
+    Returns
+    -------
+    dict where `"Z"` indicates the `z` position.
+
+    """
+    possible_grids = [{"Z": zg} for zg in ["c", "l"]]
+
+    for pg in possible_grids:
+        if (arrays_are_close(ds_coords[render_depth_name(pg)],
+                             ds[find_depth_coord_name(ds)])):
+            return pg
+
+
 def trim_and_squeeze(ds,
                      model_config="GLOBAL",
                      y_slice=None, x_slice=None,
