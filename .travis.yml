@@ -23,7 +23,7 @@ install:
     - source activate py3_xorca
     - pip install -e .
     - du -sh $HOME/xorca_test_data || echo "didn't find test data"
-    - git clone git@github.com:willirath/xorca_test_data.git $HOME/xorca_test_data
+    - git clone https://github.com/willirath/xorca_test_data.git $HOME/xorca_test_data
     - du -sh $HOME/xorca_test_data || echo "didn't find test data
 
 script:
