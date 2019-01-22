@@ -22,6 +22,7 @@ install:
     - conda env create --name py3_xorca --file environment.yml
     - source activate py3_xorca
     - pip install -e .
+    - git lfs install
     - du -sh $HOME/xorca_test_data || echo "didn't find test data"
     - git clone https://github.com/willirath/xorca_test_data.git $HOME/xorca_test_data
     - du -sh $HOME/xorca_test_data || echo "didn't find test data
