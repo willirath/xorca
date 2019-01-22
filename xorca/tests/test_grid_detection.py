@@ -73,7 +73,7 @@ def test_detection_of_horizontal_grid(size, atol, rng_seed):
         assert pg["X"] == detected_grid["X"]
 
 
-def test_find_depth_coord():
+def test_is_depth_coord():
     assert is_depth_coord("deptht")
     assert is_depth_coord("depthu")
     assert is_depth_coord("depthv")
