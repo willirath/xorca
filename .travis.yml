@@ -24,7 +24,7 @@ install:
     - pip install -e .
     - git lfs install
     - du -sh $HOME/xorca_test_data || echo "didn't find test data"
-    - git clone https://github.com/willirath/xorca_test_data.git $HOME/xorca_test_data
+    - git clone https://github.com/willirath/xorca_test_data.git $HOME/xorca_test_data || { cd $HOME/xorca_test_data; git pull; }
     - du -sh $HOME/xorca_test_data || echo "didn't find test data"
 
 script:
