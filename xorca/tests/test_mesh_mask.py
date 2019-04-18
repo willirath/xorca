@@ -135,7 +135,7 @@ def _get_nan_filled_data_set(dims, variables):
         empty[_dims] = np.full(tuple(dims[d] for d in _dims), np.nan)
 
     # create coords and variable dicts for xr.Dataset
-    coords = {k: range(v) for k, v in dims.items() if k is not "t"}
+    coords = {k: range(v) for k, v in dims.items() if k != "t"}
     data_vars = {k: (v, empty[v]) for k, v in variables.items()}
 
     return xr.Dataset(coords=coords, data_vars=data_vars)
