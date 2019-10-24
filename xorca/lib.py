@@ -262,8 +262,7 @@ def get_all_compatible_chunk_sizes(chunks, dobj):
 def set_time_independent_vars_to_coords(ds):
     """Make sure all time-independent variables are coordinates."""
     return ds.set_coords([v for v in ds.data_vars.keys()
-                          if 't' not in ds[v].dims],
-                         inplace=False)
+                          if 't' not in ds[v].dims])
 
 
 def preprocess_orca(mesh_mask, ds, **kwargs):
