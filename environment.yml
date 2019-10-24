@@ -16,7 +16,7 @@ dependencies:
   - pytest
   - pytest-cov
   - seawater
-  - xarray<0.11
+  - xarray>=0.12
   - pip:
       - codecov
       - git+https://github.com/xgcm/xgcm.git@bf4a2239d64dfd1c0d5b1af03e7394488433c11a
