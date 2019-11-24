@@ -405,6 +405,11 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
                     data_files, _data_files_chunks)),
             key=_get_first_time_step_if_any))
 
+    # variable volume - e3 scale factors are variable in time
+    for cc in aux_ds.coords:
+        if cc in ds_xorca.data_vars:
+            aux_ds.drop(cc)
+
     # Add info from aux files
     ds_xorca.update(preprocess_orca(aux_ds, aux_ds, **kwargs))
 
