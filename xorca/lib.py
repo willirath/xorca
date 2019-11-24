@@ -395,7 +395,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
         data_files)
 
     # Automatically combine all data files
-    ds_xorca = xr.auto_combine(
+    ds_xorca = xr.combine_by_coords(
         sorted(
             map(
                 lambda ds: preprocess_orca(aux_ds, ds, **kwargs),
