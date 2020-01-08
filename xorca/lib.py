@@ -63,9 +63,10 @@ def trim_and_squeeze(ds,
         return (ds[dim].size == 1)
 
     def _is_time_dim(ds, dim):
-        return (dim in orca_names.t_dims and
+        return (dim in orca_names.t_dims and (
                 np.issubdtype(ds[dim].dtype,
-                              np.datetime64))
+                              np.datetime64)
+                or np.issubdtype(ds[dim].dtype,'object')))
 
     def _is_z_dim(ds, dim):
         return (dim in orca_names.z_dims)
@@ -381,29 +382,31 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     # distributed performance.
     _aux_files_chunks = map(
         lambda af: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_dataset(af, decode_cf=False)),
+            input_ds_chunks, xr.open_dataset(af, decode_cf=False, use_cftime=True)),
         aux_files)
     aux_ds = xr.Dataset()
     for af, ac in zip(aux_files, _aux_files_chunks):
         aux_ds.update(
-            rename_dims(xr.open_dataset(af, decode_cf=False,
+            rename_dims(xr.open_dataset(af, decode_cf=False, use_cftime=True,
                                         chunks=ac)))
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_dataset(df, decode_cf=decode_cf)),
+            input_ds_chunks, xr.open_dataset(df, decode_cf=decode_cf, use_cftime=True)),
         data_files)
 
     # Automatically combine all data files
-    ds_xorca = xr.combine_by_coords(
-        sorted(
+    ds_list  = list(
             map(
                 lambda ds: preprocess_orca(aux_ds, ds, **kwargs),
                 map(lambda df, chunks: rename_dims(
-                    xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf),
+                    xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf, use_cftime=True),
                     **kwargs),
-                    data_files, _data_files_chunks)),
-            key=_get_first_time_step_if_any))
+                    data_files, _data_files_chunks)))
+
+    ds_list  = sorted(ds_list,key=_get_first_time_step_if_any)
+
+    ds_xorca = xr.combine_by_coords(ds_list)
 
     # Add info from aux files
     ds_xorca.update(preprocess_orca(aux_ds, aux_ds, **kwargs))
