@@ -9,6 +9,7 @@ from . import orca_names
 def trim_and_squeeze(ds,
                      model_config="GLOBAL",
                      y_slice=None, x_slice=None,
+                     rm_1d = False,
                      **kwargs):
     """Remove redundant grid points and drop singleton dimensions.
 
@@ -31,6 +32,9 @@ def trim_and_squeeze(ds,
     x_slice : tuple
         See y_slice.  This will override selection along x given by
         `model_config`.
+    rm_1d : 
+         Remove single time dimension in mesh_mask file without interfering
+         with real data having only 1 time step (e.g. yearly data)
 
     Returns
     -------
@@ -63,10 +67,12 @@ def trim_and_squeeze(ds,
         return (ds[dim].size == 1)
 
     def _is_time_dim(ds, dim):
-        return (dim in orca_names.t_dims and (
-                np.issubdtype(ds[dim].dtype,
-                              np.datetime64)
-                or np.issubdtype(ds[dim].dtype,'object')))
+        if (rm_1d and dim in orca_names.t_dims):
+            return ( False )
+        else:
+            return ( dim in orca_names.t_dims and (
+                     np.issubdtype(ds[dim].dtype, np.datetime64)
+                     or np.issubdtype(ds[dim].dtype,'object')))
 
     def _is_z_dim(ds, dim):
         return (dim in orca_names.z_dims)
@@ -233,9 +239,9 @@ def open_mf_or_dataset(data_files, **kwargs):
     """Open data_files as multi-file or a single-file xarray Dataset."""
 
     try:
-        mesh_mask = xr.open_mfdataset(data_files, chunks={})
+        mesh_mask = xr.open_mfdataset(data_files, chunks={},use_cftime=False)
     except TypeError as e:
-        mesh_mask = xr.open_dataset(data_files, chunks={})
+        mesh_mask = xr.open_dataset(data_files, chunks={},use_cftime=False)
 
     return mesh_mask
 
@@ -266,7 +272,7 @@ def set_time_independent_vars_to_coords(ds):
                           if 't' not in ds[v].dims])
 
 
-def preprocess_orca(mesh_mask, ds, **kwargs):
+def preprocess_orca(mesh_mask, ds, m1=True, m2=False, **kwargs):
     """Preprocess orca datasets before concatenating.
 
     This is meant to be used like:
@@ -289,6 +295,12 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
         Chunks for the ds to be preprocessed.  Pass chunking for any input
         dimension that might be in the input data.
 
+    m1 : default True 
+        True if 1. dataset is mesh_mask file - remove time dim
+         
+    m2 : default False
+        True if 2. dataset is mesh_mask file - remove time dim
+
     Returns
     -------
     xarray dataset
@@ -302,12 +314,18 @@ def preprocess_orca(mesh_mask, ds, **kwargs):
     # construct minimal grid-aware data set from mesh-mask info
     if not isinstance(mesh_mask, xr.Dataset):
         mesh_mask = open_mf_or_dataset(mesh_mask, **kwargs)
-    mesh_mask = trim_and_squeeze(mesh_mask, **kwargs)
+    if m1:
+        mesh_mask = trim_and_squeeze(mesh_mask, **kwargs, rm_1d=True)
+    else:
+        mesh_mask = trim_and_squeeze(mesh_mask, **kwargs)
     return_ds = create_minimal_coords_ds(mesh_mask, **kwargs)
 
     # make sure dims are called correctly and trim input ds
     ds = rename_dims(ds, **kwargs)
-    ds = trim_and_squeeze(ds, **kwargs)
+    if m2:
+       ds = trim_and_squeeze(ds, **kwargs, rm_1d=True)
+    else:
+       ds = trim_and_squeeze(ds, **kwargs)
 
     # copy coordinates from the mesh-mask and from the data set
     return_ds = copy_coords(return_ds, mesh_mask, **kwargs)
@@ -384,13 +402,14 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     # distributed performance.
     _aux_files_chunks = map(
         lambda af: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_dataset(af, decode_cf=False, use_cftime=use_cftime)),
+            input_ds_chunks, xr.open_dataset(af, decode_cf=False, use_cftime=False)),
         aux_files)
     aux_ds = xr.Dataset()
     for af, ac in zip(aux_files, _aux_files_chunks):
         aux_ds.update(
-            rename_dims(xr.open_dataset(af, decode_cf=False, use_cftime=use_cftime,
+            rename_dims(xr.open_dataset(af, decode_cf=False, use_cftime=False,
                                         chunks=ac)))
+
     # Again, we first have to open all data sets to filter the input chunks.
     _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
@@ -398,20 +417,17 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
         data_files)
 
     # Automatically combine all data files
-    ds_list  = list(
-            map(
-                lambda ds: preprocess_orca(aux_ds, ds, **kwargs),
+    ds_xorca = xr.combine_by_coords(
+        sorted(
+            map(lambda ds: preprocess_orca(aux_ds, ds, m1=True, m2=False, **kwargs),
                 map(lambda df, chunks: rename_dims(
                     xr.open_dataset(df, chunks=chunks, decode_cf=decode_cf, use_cftime=use_cftime),
                     **kwargs),
-                    data_files, _data_files_chunks)))
-
-    ds_list  = sorted(ds_list,key=_get_first_time_step_if_any)
-
-    ds_xorca = xr.combine_by_coords(ds_list)
+                    data_files, _data_files_chunks)),
+            key=_get_first_time_step_if_any))
 
     # Add info from aux files
-    ds_xorca.update(preprocess_orca(aux_ds, aux_ds, **kwargs))
+    ds_xorca.update(preprocess_orca(aux_ds, aux_ds, m1=True, m2=True, **kwargs))
 
     # Chunk the final ds
     ds_xorca = ds_xorca.chunk(
