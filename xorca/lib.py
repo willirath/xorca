@@ -416,18 +416,21 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     return ds_xorca
 
 
-def load_xorca_dataset_zarr(data_stores=None, aux_files=None, decode_cf=True,
+def load_xorca_dataset_auto(data_files=None, aux_files=None, decode_cf=True,
                        **kwargs):
-    """Create a grid-aware NEMO dataset from zarr stores.
+    """Create a grid-aware NEMO dataset from netcdf files or zarr stores.
 
     Parameters
     ----------
-    data_stores : Path | sequence | string
-        Zarr stores containing the data: single instance or sequence of
-        anything accepted by `xr.open_zarr`.
+    data_files : Path | sequence | string
+        Either Netcdf files or Zarr stores containing the data. 
+        Anything accepted by `xr.open_mfdataset`, or `xr.open_dataset`, or
+        `xr.open_zarr`: A single path or file name, a sequence of Paths or
+        file names, a glob statement.
     aux_files : Path | sequence | string
-        Anything accepted by `xr.open_mfdataset` or, `xr.open_dataset`: A
-        single file name, a sequence of Paths or file names, a glob statement.
+        Anything accepted by `xr.open_mfdataset`, or `xr.open_dataset`, or
+        `xr.open_zarr`: A single path or file name, a sequence of Paths or
+        file names, a glob statement.
     input_ds_chunks : dict
         Chunks for the ds to be preprocessed.  Pass chunking for any input
         dimension that might be in the input data.
@@ -461,6 +464,19 @@ def load_xorca_dataset_zarr(data_stores=None, aux_files=None, decode_cf=True,
     }
     target_ds_chunks = kwargs.get("target_ds_chunks",
                                   default_target_ds_chunks)
+    
+    # Generalized function to enable reading of boh netcdf files and zarr
+    # stores
+    def _open_dataset_or_zarr(*args, **kwargs):
+        try:
+            return xr.open_dataset(*args, **kwargs)
+        except:
+            return xr.open_zarr(*args, **kwargs)
+        else:
+            raise ValueError(
+                "Could not open dataset or zarr with" +
+                f"args={args} and kwargs={kwargs}."
+            )
 
     # First, read aux files to learn about all dimensions.  Then, open again
     # and specify chunking for all applicable dims.  It is very important to
@@ -468,18 +484,21 @@ def load_xorca_dataset_zarr(data_stores=None, aux_files=None, decode_cf=True,
     # distributed performance.
     _aux_files_chunks = map(
         lambda af: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_dataset(af, decode_cf=False)),
+            input_ds_chunks, _open_dataset_or_zarr(af, decode_cf=False)),
         aux_files)
     aux_ds = xr.Dataset()
     for af, ac in zip(aux_files, _aux_files_chunks):
         aux_ds.update(
-            rename_dims(xr.open_dataset(af, decode_cf=False,
-                                        chunks=ac)))
+            rename_dims(_open_dataset_or_zarr(
+                af, decode_cf=False, chunks=ac
+            ))
+        )
+    
     # Again, we first have to open all data sets to filter the input chunks.
-    _data_stores_chunks = map(
+    _data_files_chunks = map(
         lambda df: get_all_compatible_chunk_sizes(
-            input_ds_chunks, xr.open_zarr(df, decode_cf=decode_cf)),
-        data_stores)
+            input_ds_chunks, _open_dataset_or_zarr(df, decode_cf=decode_cf)),
+        data_files)
 
     # Automatically combine all data files
     ds_xorca = xr.combine_by_coords(
@@ -487,9 +506,11 @@ def load_xorca_dataset_zarr(data_stores=None, aux_files=None, decode_cf=True,
             map(
                 lambda ds: preprocess_orca(aux_ds, ds, **kwargs),
                 map(lambda df, chunks: rename_dims(
-                    xr.open_zarr(df, chunks=chunks, decode_cf=decode_cf),
+                    _open_dataset_or_zarr(
+                        df, chunks=chunks, decode_cf=decode_cf
+                    ),
                     **kwargs),
-                    data_stores, _data_stores_chunks)),
+                    data_files, _data_files_chunks)),
             key=_get_first_time_step_if_any))
 
     # Add info from aux files
@@ -500,4 +521,3 @@ def load_xorca_dataset_zarr(data_stores=None, aux_files=None, decode_cf=True,
         get_all_compatible_chunk_sizes(target_ds_chunks, ds_xorca))
 
     return ds_xorca
-
