@@ -2,7 +2,6 @@
 
 import numpy as np
 import xarray as xr
-import zarr
 
 from . import orca_names
 
