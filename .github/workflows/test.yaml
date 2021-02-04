@@ -47,6 +47,6 @@ jobs:
           printenv | sort
       - name: Run tests
         shell: bash -l {0}
-        run: pytest . --verbose --color=yes
+        run: pytest . --verbose --color=yes --cov=./
       - name: Codecov
         uses: codecov/codecov-action@v1
