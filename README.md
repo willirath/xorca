@@ -1,10 +1,7 @@
 # XORCA
 
-master: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=master)](https://travis-ci.org/willirath/xorca)
+![test](https://github.com/willirath/xorca/workflows/test/badge.svg)
 [![codecov](https://codecov.io/gh/willirath/xorca/branch/master/graph/badge.svg)](https://codecov.io/gh/willirath/xorca)
-
-develop: [![Build Status](https://travis-ci.org/willirath/xorca.svg?branch=develop)](https://travis-ci.org/willirath/xorca)
-[![codecov](https://codecov.io/gh/willirath/xorca/branch/develop/graph/badge.svg)](https://codecov.io/gh/willirath/xorca)
 
 ## What is this about?
 
