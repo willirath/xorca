@@ -47,6 +47,6 @@ jobs:
           printenv | sort
       - name: Run tests
         shell: bash -l {0}
-        run: pytest . --verbose --color=yes --cov=./
+        run: pytest xorca -v --cov=xorca --cov-config=".coveragerc" --cov-report="term-missing" xorca/tests/
       - name: Codecov
         uses: codecov/codecov-action@v1
