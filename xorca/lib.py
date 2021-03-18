@@ -360,7 +360,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     """
     default_input_ds_chunks = {
         "time_counter": 1, "t": 1,
-        "z": 2, "deptht": 2, #"depthu": 2, "depthv": 2, "depthw": 2,
+        "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
         "y": 200, "x": 200
     }
     # get and remove (pop) the input_ds_chunks from kwargs
