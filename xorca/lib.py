@@ -86,7 +86,10 @@ def create_minimal_coords_ds(mesh_mask, **kwargs):
     and `"central"` and `"left"` grid points in the vertical.
 
     """
-    N_z = len(mesh_mask.coords["z"])
+    try:
+        N_z = len(mesh_mask.coords["z"])
+    except KeyError:
+        N_z = len(mesh_mask.coords["nav_lev"])
     N_y = len(mesh_mask.coords["y"])
     N_x = len(mesh_mask.coords["x"])
 
@@ -355,7 +358,7 @@ def load_xorca_dataset(data_files=None, aux_files=None, decode_cf=True,
     dataset
 
     """
-
+    
     default_input_ds_chunks = {
         "time_counter": 1, "t": 1,
         "z": 2, "deptht": 2, "depthu": 2, "depthv": 2, "depthw": 2,
